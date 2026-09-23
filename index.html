@@ -3,14 +3,14 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Iriarte ERP — Sonsoles Pérez Iriarte</title>
+<title>Presupuestos — Sonsoles Pérez Iriarte</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <div id="lockScreen">
   <div id="lockBox">
     <div class="studio" style="color:var(--ink-soft);font-size:11px;">Sonsoles Pérez Iriarte</div>
-    <h3 style="margin:4px 0 14px;font-weight:500;">Iriarte ERP</h3>
+    <h3 style="margin:4px 0 14px;font-weight:500;">Presupuestos</h3>
     <div id="loginFields">
       <input id="loginEmail" type="email" placeholder="Email" autocomplete="username">
       <input id="loginPassword" type="password" placeholder="Contraseña" autocomplete="current-password">
@@ -59,30 +59,15 @@
 <div id="syncStatus">Conectando…</div>
 <div id="app">
   <div id="sidebar">
-    <div class="kindTabs" id="kindTabsWrap">
-      <button class="kindTab active" id="kindTabObra" type="button">Obra</button>
-      <button class="kindTab" id="kindTabHonorarios" type="button">Honorarios</button>
-    </div>
+    <div class="kindTabs" id="kindTabsWrap"><button class="kindTab active" id="kindTabObra" type="button">Obra</button><button class="kindTab" id="kindTabHonorarios" type="button">Honorarios</button></div>
     <button id="newProjectBtn">+ Nuevo proyecto</button>
-    <div class="kindTabs" id="projectFilterWrap">
-      <button class="kindTab active" data-filter="todos" type="button">Todos</button>
-      <button class="kindTab" data-filter="presupuestos" type="button">Presupuestos</button>
-      <button class="kindTab" data-filter="proyectos" type="button">Proyectos</button>
-    </div>
+    <div class="kindTabs" id="projectFilterWrap"><button class="kindTab active" data-filter="todos" type="button">Todos</button><button class="kindTab" data-filter="presupuestos" type="button">Presupuestos</button><button class="kindTab" data-filter="proyectos" type="button">Proyectos</button></div>
     <input id="searchInput" placeholder="Buscar proyecto o cliente…">
     <label id="archiveToggle"><input type="checkbox" id="archiveCheckbox"> Ver archivados</label>
     <ul id="projectList"></ul>
   </div>
   <div id="main">
-    <div id="topbar">
-      <div class="viewTabs" id="viewTabs">
-        <button class="viewTab active" data-view="edit">Trabajo</button>
-        <button class="viewTab" data-view="client">Vista cliente</button>
-        <button class="viewTab" data-view="supplier">Vista proveedor</button>
-        <button class="viewTab" data-view="admin" id="adminTabBtn" style="display:none;">Resumen equipo</button>
-      </div>
-      <div id="topbarRight" class="mono" style="font-size:12px;color:var(--ink-soft);"></div>
-    </div>
+    <div id="topbar"><div class="viewTabs" id="viewTabs"><button class="viewTab active" data-view="edit">Trabajo</button><button class="viewTab" data-view="client">Vista cliente</button><button class="viewTab" data-view="supplier">Vista proveedor</button><button class="viewTab" data-view="admin" id="adminTabBtn" style="display:none;">Resumen equipo</button></div><div id="topbarRight" class="mono" style="font-size:12px;color:var(--ink-soft);"></div></div>
     <div id="content"></div>
   </div>
   <div id="summary"></div>
@@ -92,7 +77,9 @@
 <div id="erpToast" class="erpToast"></div>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pako@2.1.0/dist/pako.min.js"></script>
+<script src="config.js"></script>
 <script src="app-loader.js"></script>
-<script id="iriarte-core-inline" src="core.js"></script>
+<script src="core.js"></script>
 </body>
 </html>
