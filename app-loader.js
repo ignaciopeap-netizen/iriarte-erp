@@ -1,33 +1,33 @@
 (function(){
 "use strict";
-async function inflateChunks(prefix,count){
-  const parts=[];
-  for(let i=1;i<=count;i++){
-    const name=`${prefix}.${String(i).padStart(2,"0")}.b64`;
-    const r=await fetch(name,{cache:"no-store"});
-    if(!r.ok) throw new Error(`No se pudo cargar ${name} (${r.status})`);
-    parts.push((await r.text()).trim());
-  }
-  const b64=parts.join("");
-  const bin=atob(b64);
-  const bytes=new Uint8Array(bin.length);
+function fetchTextSync(url){
+  const x=new XMLHttpRequest();
+  x.open("GET",url,false);
+  x.send(null);
+  if(x.status<200||x.status>=300) throw new Error(`No se pudo cargar ${url} (${x.status})`);
+  return (x.responseText||"").trim();
+}
+function inflateChunks(prefix,count){
+  let b64="";
+  for(let i=1;i<=count;i++) b64+=fetchTextSync(`${prefix}.${String(i).padStart(2,"0")}.b64`);
+  const bin=atob(b64), bytes=new Uint8Array(bin.length);
   for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-  if(typeof DecompressionStream!=="function") throw new Error("El navegador no soporta descompresión gzip.");
-  const ds=new DecompressionStream("gzip");
-  const stream=new Blob([bytes]).stream().pipeThrough(ds);
-  return await new Response(stream).text();
+  if(!window.pako) throw new Error("No se pudo cargar el descompresor de la aplicación.");
+  return new TextDecoder().decode(window.pako.ungzip(bytes));
 }
 function run(code,label){
   const s=document.createElement("script");
-  s.textContent=code+`\n//# sourceURL=${label}`;
+  s.text=code+`\n//# sourceURL=${label}`;
   document.head.appendChild(s);
   s.remove();
 }
-window.iriarteBundlesReady=(async()=>{
-  const presupuestos=await inflateChunks("presupuestos",8);
-  run(presupuestos,"presupuestos.js");
-  const erp=await inflateChunks("erp",2);
-  run(erp,"erp.js");
-  return true;
-})();
+try{
+  run(inflateChunks("presupuestos",8),"presupuestos.js");
+  run(inflateChunks("erp",2),"erp.js");
+  window.iriarteBundlesReady=Promise.resolve(true);
+}catch(e){
+  console.error(e);
+  window.iriarteBundlesReady=Promise.reject(e);
+  window.addEventListener("DOMContentLoaded",()=>{const el=document.getElementById("lockError");if(el)el.textContent="No se ha podido cargar la aplicación: "+e.message;});
+}
 })();
