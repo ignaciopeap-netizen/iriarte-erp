@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Presupuestos — Sonsoles Pérez Iriarte</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="lockScreen">
+  <div id="lockBox">
+    <div class="studio" style="color:var(--ink-soft);font-size:11px;">Sonsoles Pérez Iriarte</div>
+    <h3 style="margin:4px 0 14px;font-weight:500;">Presupuestos</h3>
+    <div id="loginFields">
+      <input id="loginEmail" type="email" placeholder="Email" autocomplete="username">
+      <input id="loginPassword" type="password" placeholder="Contraseña" autocomplete="current-password">
+      <div id="lockError"></div>
+      <button id="lockBtn">Entrar</button>
+      <button type="button" id="forgotBtn" class="linkBtn">¿Olvidaste tu contraseña?</button>
+    </div>
+    <div id="resetFields" style="display:none;">
+      <p style="font-size:12px;color:var(--ink-soft);margin:0 0 10px;">Escribe tu email y te enviaremos un enlace para crear una contraseña nueva.</p>
+      <input id="resetEmail" type="email" placeholder="Email" autocomplete="username">
+      <div id="resetMsg" class="lockMsg"></div>
+      <button id="sendResetBtn">Enviar enlace</button>
+      <button type="button" id="backToLoginBtn" class="linkBtn">Volver</button>
+    </div>
+    <div id="newPasswordFields" style="display:none;">
+      <p style="font-size:12px;color:var(--ink-soft);margin:0 0 10px;">Escribe tu nueva contraseña.</p>
+      <input id="newPassword1" type="password" placeholder="Nueva contraseña" autocomplete="new-password">
+      <input id="newPassword2" type="password" placeholder="Repite la contraseña" autocomplete="new-password">
+      <div id="newPasswordMsg" class="lockMsg"></div>
+      <button id="savePasswordBtn">Guardar contraseña</button>
+    </div>
+  </div>
+</div>
+<div id="moduleNav">
+  <div class="navBrand">
+    <img id="navLogoMini" alt="Sonsoles Pérez Iriarte">
+    <div><b>Sonsoles Pérez Iriarte</b><small>JARDINERÍA Y PAISAJISMO</small></div>
+  </div>
+  <div class="navLinks" id="erpNav">
+    <a class="navLink" data-erp-page="inicio" href="#">Inicio</a>
+    <a class="navLink" data-erp-page="clientes" href="#">Clientes</a>
+    <a class="navLink" data-erp-page="proyectos" href="#">Proyectos</a>
+    <a class="navLink active" data-erp-page="presupuestos" href="#">Presupuestos</a>
+    <a class="navLink" data-erp-page="facturas" href="#">Facturas</a>
+    <a class="navLink" data-erp-page="proveedores" href="#">Proveedores</a>
+    <a class="navLink" data-erp-page="compras" href="#">Compras</a>
+    <a class="navLink" data-erp-page="obra" href="#">Obra</a>
+    <a class="navLink" data-erp-page="horas" href="#">Horas</a>
+    <a class="navLink" data-erp-page="documentos" href="#">Documentos</a>
+    <a class="navLink" data-erp-page="finanzas" href="#">Finanzas</a>
+    <a class="navLink" data-erp-page="gastos" href="#">Gastos generales</a>
+    <a class="navLink" data-erp-page="informes" href="#">Informes</a>
+  </div>
+  <div class="navUser" id="navUser"></div>
+</div>
+<div id="syncStatus">Conectando…</div>
+<div id="app">
+  <div id="sidebar">
+    <div class="kindTabs" id="kindTabsWrap">
+      <button class="kindTab active" id="kindTabObra" type="button">Obra</button>
+      <button class="kindTab" id="kindTabHonorarios" type="button">Honorarios</button>
+    </div>
+    <button id="newProjectBtn">+ Nuevo proyecto</button>
+    <div class="kindTabs" id="projectFilterWrap">
+      <button class="kindTab active" data-filter="todos" type="button">Todos</button>
+      <button class="kindTab" data-filter="presupuestos" type="button">Presupuestos</button>
+      <button class="kindTab" data-filter="proyectos" type="button">Proyectos</button>
+    </div>
+    <input id="searchInput" placeholder="Buscar proyecto o cliente…">
+    <label id="archiveToggle"><input type="checkbox" id="archiveCheckbox"> Ver archivados</label>
+    <ul id="projectList"></ul>
+  </div>
+  <div id="main">
+    <div id="topbar">
+      <div class="viewTabs" id="viewTabs">
+        <button class="viewTab active" data-view="edit">Trabajo</button>
+        <button class="viewTab" data-view="client">Vista cliente</button>
+        <button class="viewTab" data-view="supplier">Vista proveedor</button>
+        <button class="viewTab" data-view="admin" id="adminTabBtn" style="display:none;">Resumen equipo</button>
+      </div>
+      <div id="topbarRight" class="mono" style="font-size:12px;color:var(--ink-soft);"></div>
+    </div>
+    <div id="content"></div>
+  </div>
+  <div id="summary"></div>
+</div>
+<div id="erpView" class="erpView" style="display:none"></div>
+<div id="erpModal" class="erpModal" aria-hidden="true"></div>
+<div id="erpToast" class="erpToast"></div>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<script id="iriarte-core-inline" src="core.js"></script>
+<script src="presupuestos.js"></script>
+<script id="iriarte-erp-code" src="erp.js"></script>
+</body>
+</html>
