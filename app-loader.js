@@ -1,33 +1,42 @@
 (function(){
 "use strict";
-function fetchTextSync(url){
-  const x=new XMLHttpRequest();
-  x.open("GET",url,false);
-  x.send(null);
-  if(x.status<200||x.status>=300) throw new Error(`No se pudo cargar ${url} (${x.status})`);
-  return (x.responseText||"").trim();
+
+async function fetchChunk(url){
+  const r=await fetch(url,{cache:"no-store"});
+  if(!r.ok) throw new Error(`No se pudo cargar ${url} (${r.status})`);
+  return (await r.text()).trim();
 }
-function inflateChunks(prefix,count){
-  let b64="";
-  for(let i=1;i<=count;i++) b64+=fetchTextSync(`${prefix}.${String(i).padStart(2,"0")}.b64`);
-  const bin=atob(b64), bytes=new Uint8Array(bin.length);
+
+async function inflateChunks(prefix,count){
+  const parts=[];
+  for(let i=1;i<=count;i++) parts.push(await fetchChunk(`${prefix}.${String(i).padStart(2,"0")}.b64`));
+  const bin=atob(parts.join(""));
+  const bytes=new Uint8Array(bin.length);
   for(let i=0;i<bin.length;i++) bytes[i]=bin.charCodeAt(i);
-  if(!window.pako) throw new Error("No se pudo cargar el descompresor de la aplicación.");
-  return new TextDecoder().decode(window.pako.ungzip(bytes));
+  if(typeof DecompressionStream!=="function") throw new Error("Este navegador no permite descomprimir los módulos de la aplicación.");
+  const stream=new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
+  return await new Response(stream).text();
 }
+
 function run(code,label){
   const s=document.createElement("script");
-  s.text=code+`\n//# sourceURL=${label}`;
+  s.textContent=code+`\n//# sourceURL=${label}`;
   document.head.appendChild(s);
   s.remove();
 }
-try{
-  run(inflateChunks("presupuestos",8),"presupuestos.js");
-  run(inflateChunks("erp",2),"erp.js");
-  window.iriarteBundlesReady=Promise.resolve(true);
-}catch(e){
-  console.error(e);
-  window.iriarteBundlesReady=Promise.reject(e);
-  window.addEventListener("DOMContentLoaded",()=>{const el=document.getElementById("lockError");if(el)el.textContent="No se ha podido cargar la aplicación: "+e.message;});
-}
+
+window.iriarteBundlesReady=(async()=>{
+  try{
+    const presupuestos=await inflateChunks("presupuestos",8);
+    run(presupuestos,"presupuestos.js");
+    const erp=await inflateChunks("erp",2);
+    run(erp,"erp.js");
+    window.__iriarteBundlesLoaded=true;
+    return true;
+  }catch(e){
+    window.__iriarteBundleError=e;
+    console.error("Error cargando Iriarte ERP",e);
+    throw e;
+  }
+})();
 })();
