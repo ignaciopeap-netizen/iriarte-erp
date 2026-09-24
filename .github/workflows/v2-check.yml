@@ -1,0 +1,35 @@
+name: V2 checks
+
+on:
+  push:
+    branches: [unified-v2]
+  pull_request:
+    branches: [main]
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: JavaScript syntax
+        run: |
+          set -e
+          for f in v2/*.js; do
+            echo "Checking $f"
+            node --check "$f"
+          done
+      - name: Verify referenced local assets
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('v2/index.html').read_text(encoding='utf-8')
+          refs=re.findall(r'(?:src|href)="\./([^"?#]+)', html)
+          missing=[r for r in refs if not (Path('v2')/r).exists()]
+          if missing:
+              raise SystemExit('Missing V2 assets: '+', '.join(missing))
+          print('All local V2 assets are present:', ', '.join(refs))
+          PY
