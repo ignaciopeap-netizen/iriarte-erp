@@ -14,12 +14,9 @@
   function openProject(){
     const id=localStorage.getItem('iriarte_open_project');if(!id)return false;
     if(window.APP?.route!=='proyectos'){if(projectTries++<30)return true;localStorage.removeItem('iriarte_open_project');return false}
-    const exists=(window.APP?.data?.proyectos||[]).some(x=>String(x.id)===String(id));
-    if(!exists){if(projectTries++<30)return true;localStorage.removeItem('iriarte_open_project');return false}
-    window.APP.sel.project=id;
-    localStorage.removeItem('iriarte_open_project');projectTries=0;
-    if(window.renderIriarte)window.renderIriarte();
-    return false;
+    const item=document.querySelector(`[data-select-project="${CSS.escape(id)}"]`);
+    if(!item){if(projectTries++<30)return true;localStorage.removeItem('iriarte_open_project');return false}
+    localStorage.removeItem('iriarte_open_project');projectTries=0;item.click();return false;
   }
 
   function run(){clearTimeout(timer);timer=setTimeout(()=>{const retryInvoice=openInvoice(),retryProject=openProject();if(retryInvoice||retryProject)run()},100)}
