@@ -1,0 +1,2 @@
+// Official Sonsoles Pérez Iriarte logo, reduced for web/PDF headers from the user-provided source.
+window.IRIARTE_LOGO_DATA_URI='data:image/jpeg;base64,/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAAkGBwgHBgkIBwgKCgkLDRYPDQwMDRsUFRAWIB0iIi
