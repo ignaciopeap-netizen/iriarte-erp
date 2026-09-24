@@ -6,7 +6,6 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
   const num=v=>Number(String(v??0).replace(',','.'))||0;
   const money=v=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(Number(v||0));
-  const today=()=>new Date().toISOString().slice(0,10);
   let timer;
 
   function budgetsForProject(pid){return (window.APP?.data?.presupuestos||[]).filter(x=>String(x.proyecto_id||'')===String(pid))}
@@ -16,7 +15,7 @@
     const root=$('#modal-root');
     root.innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><h2>${esc(title)}</h2><div class="grow"></div><button class="btn" type="button" data-phase-close>Cerrar</button></div><form id="phase-form"><div class="modal-body">${body}<div id="phase-error"></div></div><div class="modal-foot"><button class="btn" type="button" data-phase-close>Cancelar</button><button class="btn primary" type="submit">Guardar</button></div></form></div></div>`;
     const close=()=>root.innerHTML='';root.querySelectorAll('[data-phase-close]').forEach(b=>b.onclick=close);
-    $('#phase-form').onsubmit=async e=>{e.preventDefault();e.submitter.disabled=true;try{await onSave(Object.fromEntries(new FormData(e.currentTarget).entries()));close();location.reload()}catch(err){$('#phase-error').innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c">${esc(err.message||err)}</div>`;e.submitter.disabled=false}};
+    $('#phase-form').onsubmit=async e=>{e.preventDefault();e.submitter.disabled=true;try{await onSave(Object.fromEntries(new FormData(e.currentTarget).entries()));close();if(window.reloadIriarte)await window.reloadIriarte();else location.reload()}catch(err){$('#phase-error').innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c">${esc(err.message||err)}</div>`;e.submitter.disabled=false}};
   }
 
   async function phaseForm(pid,existing=null){
@@ -39,16 +38,15 @@
     });
   }
 
-  async function makeInvoice(phase,pid,budget){
+  async function makeInvoice(phase){
     const client=db();if(!client)return;
     if(phase.factura_id){localStorage.setItem('iriarte_open_invoice',phase.factura_id);location.hash='#facturas';location.reload();return}
-    const amount=num(phase.importe)||(num(budget.base)*num(phase.porcentaje)/100);if(amount<=0){alert('La fase necesita un importe o porcentaje antes de facturar.');return}
     try{
-      const payload={numero:null,fecha:today(),cliente_id:budget.cliente_id||null,proyecto_id:pid,presupuesto_id:budget.id,presupuesto_fase_id:phase.id,concepto:phase.nombre||'Fase de facturación',estado:'borrador',irpf_pct:budget.irpf_enabled?num(budget.irpf_pct):0,notas:'Factura creada desde fase de facturación del presupuesto.'};
-      const {data,error}=await client.from('facturas').insert(payload).select('id').single();if(error)throw error;
-      const iva=num(budget.iva_pct||21);const r=await client.from('factura_lineas').insert({factura_id:data.id,orden:1,seccion:'Fase de facturación',descripcion:phase.nombre||'Fase',unidad:'ud',cantidad:1,precio_unitario:amount,descuento_pct:0,iva_pct:iva});if(r.error)throw r.error;
-      const u=await client.from('presupuesto_fases_facturacion').update({factura_id:data.id,estado:'facturada'}).eq('id',phase.id);if(u.error)throw u.error;
-      localStorage.setItem('iriarte_open_invoice',data.id);location.hash='#facturas';location.reload();
+      const {data,error}=await client.rpc('crear_factura_desde_fase_v2',{p_fase_id:phase.id});if(error)throw error;
+      const invoiceId=data?.invoice_id;if(!invoiceId)throw new Error('La base de datos no devolvió la factura creada.');
+      if(data?.project_id)window.APP.sel.project=data.project_id;
+      localStorage.setItem('iriarte_open_invoice',invoiceId);
+      location.hash='#facturas';location.reload();
     }catch(err){alert('No se pudo facturar la fase:\n'+(err.message||err))}
   }
 
@@ -63,7 +61,7 @@
     hub.appendChild(card);
     card.querySelector('[data-phase-new]').onclick=()=>phaseForm(pid);
     card.querySelectorAll('[data-phase-edit]').forEach(b=>b.onclick=()=>phaseForm(pid,phases.find(x=>String(x.id)===String(b.dataset.phaseEdit))));
-    card.querySelectorAll('[data-phase-invoice]').forEach(b=>b.onclick=()=>{const ph=phases.find(x=>String(x.id)===String(b.dataset.phaseInvoice)),budget=budgets.find(x=>String(x.id)===String(ph.presupuesto_id));makeInvoice(ph,pid,budget)});
+    card.querySelectorAll('[data-phase-invoice]').forEach(b=>b.onclick=()=>{const ph=phases.find(x=>String(x.id)===String(b.dataset.phaseInvoice));makeInvoice(ph)});
   }
 
   function schedule(){clearTimeout(timer);timer=setTimeout(loadAndRender,120)}
