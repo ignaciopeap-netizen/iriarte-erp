@@ -49,7 +49,7 @@
 
   async function openEditor(fid=null){
     let data;
-    try{data=await getInvoice(fid)}catch(err){alert('No se puede abrir el editor por líneas. Aplica MIGRACION_V2.sql.\n\n'+err.message);return}
+    try{data=await getInvoice(fid)}catch(err){alert('No se puede abrir el editor por líneas.\n\n'+err.message);return}
     const S=window.APP?.data||{}, invoice=data.invoice, lines=(data.lines||[]).map(x=>({...x}));
     const root=$('#modal-root');
     root.innerHTML=`<div class="modal-backdrop"><div class="modal" style="width:min(1180px,97vw)"><div class="modal-head"><h2>${fid?'Editar factura':'Nueva factura'}</h2><div class="grow"></div><button type="button" class="btn" data-inv-close>Cerrar</button></div><form id="invoice-pro-form"><div class="modal-body">
@@ -86,7 +86,7 @@
     $('#invoice-preview').onclick=()=>printDraft(Object.fromEntries(new FormData($('#invoice-pro-form')).entries()),lines);
     $('#invoice-pro-form').onsubmit=async e=>{e.preventDefault();const submit=e.submitter;submit.disabled=true;try{
       const f=Object.fromEntries(new FormData(e.currentTarget).entries()),c=calc(lines),rp=num(f.irpf_pct),irpf=c.base*rp/100,total=c.total-irpf;
-      const payload={numero:f.numero||null,fecha:f.fecha,cliente_id:f.cliente_id||null,proyecto_id:f.proyecto_id||null,fecha_vencimiento:f.fecha_vencimiento||null,estado:f.estado||'borrador',forma_pago:f.forma_pago||null,concepto:f.concepto||null,base:c.base,base_imponible:c.base,iva_importe:c.iva,irpf_pct:rp,irpf_importe:irpf,total,observaciones:f.observaciones||null,notas:f.observaciones||null};
+      const payload={numero:f.numero||null,fecha:f.fecha,cliente_id:f.cliente_id||null,proyecto_id:f.proyecto_id||null,fecha_vencimiento:f.fecha_vencimiento||null,estado:f.estado||'borrador',forma_pago:f.forma_pago||null,concepto:f.concepto||null,base:c.base,iva_importe:c.iva,irpf_pct:rp,irpf_importe:irpf,total,observaciones:f.observaciones||null,notas:f.observaciones||null};
       let invoiceId=fid;
       if(fid){const {error}=await db.from('facturas').update(payload).eq('id',fid);if(error)throw error;const del=await db.from('factura_lineas').delete().eq('factura_id',fid);if(del.error)throw del.error}else{const {data,error}=await db.from('facturas').insert(payload).select('id').single();if(error)throw error;invoiceId=data.id}
       if(lines.length){const rows=lines.map((l,i)=>({factura_id:invoiceId,orden:i+1,codigo:l.codigo||null,seccion:l.seccion||null,descripcion:l.descripcion||'',ubicacion:l.ubicacion||null,unidad:l.unidad||null,cantidad:num(l.cantidad),precio_unitario:num(l.precio_unitario),descuento_pct:num(l.descuento_pct),iva_pct:num(l.iva_pct)}));const ins=await db.from('factura_lineas').insert(rows);if(ins.error)throw ins.error}
