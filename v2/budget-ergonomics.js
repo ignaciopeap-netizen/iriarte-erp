@@ -31,13 +31,14 @@ async function archiveBudget(){
  if(!confirm(`¿Archivar “${p.name||p.nombre||'este presupuesto'}”? No se borrará y podrás volver a mostrarlo.`))return;
  try{
    const {error}=await client.from('presupuestos').update({archived:true}).eq('id',p.id);if(error)throw error;
+   p.archived=true;
    const next=nextUnarchived();window.APP.sel.budget=next?.id||'';
    if(window.reloadIriarte)await window.reloadIriarte();
    if(next)refreshSelected(next.id);
  }catch(err){alert('No se pudo archivar el presupuesto:\n'+(err.message||err))}
 }
 async function restoreBudget(id){
- const client=db();if(!client)return;const {error}=await client.from('presupuestos').update({archived:false}).eq('id',id);if(error)return alert(error.message);
+ const client=db();if(!client||!id)return;const {error}=await client.from('presupuestos').update({archived:false}).eq('id',id);if(error)return alert(error.message);
  if(window.reloadIriarte)await window.reloadIriarte();window.APP.sel.budget=id;refreshSelected(id);
 }
 function duplicateLine(index){
