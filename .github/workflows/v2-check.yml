@@ -51,6 +51,7 @@ jobs:
           grep -q "crear_factura_desde_fase_v2" v2/billing-phases.js
           grep -q "conciliar_movimiento_v2" v2/reconciliation-sync.js
           grep -q "v_control_integridad_erp" v2/reports-plus.js
+          grep -q "estado.*anulada" v2/project-finance-guard.js
           if grep -q 'src="./bank-import-pro.js"' v2/index.html; then
             echo "Obsolete bank importer must not be loaded" >&2
             exit 1
@@ -67,7 +68,7 @@ jobs:
           required=[
             'db-bridge.js','runtime-guard.js','app-core.js','auth-recovery.js','project-actions.js','contacts-plus.js',
             'document-upload.js','enhancements.js','reconciliation-sync.js','workflow-plus.js','invoice-pro.js','invoice-guard.js',
-            'derived-status-guard.js','budget-workflow-fix.js','project-hub.js','billing-phases.js','bank-import-complete.js',
+            'derived-status-guard.js','budget-workflow-fix.js','project-hub.js','project-finance-guard.js','billing-phases.js','bank-import-complete.js',
             'finance-view-fix.js','reports-plus.js','auto-open.js'
           ]
           missing=[x for x in required if x not in pos]
@@ -83,8 +84,8 @@ jobs:
               raise SystemExit('reconciliation-sync.js must load before workflow-plus.js')
           if not pos['invoice-pro.js'] < pos['invoice-guard.js'] < pos['derived-status-guard.js']:
               raise SystemExit('Invoice guards must load after invoice-pro.js')
-          if not pos['budget-workflow-fix.js'] < pos['billing-phases.js']:
-              raise SystemExit('Budget conversion must load before project billing phases')
+          if not pos['project-hub.js'] < pos['project-finance-guard.js'] < pos['billing-phases.js']:
+              raise SystemExit('Project finance guard must load after project hub and before billing phases')
           print('Critical V2 module loading and ordering are correct')
           PY
       - name: Guard SQL workflow files
