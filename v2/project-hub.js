@@ -15,7 +15,7 @@
     const invoiceIds=new Set(invoices.map(x=>String(x.id))), purchaseIds=new Set(purchases.map(x=>String(x.id)));
     const collections=(S.data.cobros||[]).filter(x=>invoiceIds.has(String(x.factura_id)));
     const payments=(S.data.pagos||[]).filter(x=>purchaseIds.has(String(x.compra_id)));
-    const baseInv=invoices.reduce((a,x)=>a+num(x.base??x.base_imponible),0), basePur=purchases.reduce((a,x)=>a+num(x.base??x.base_imponible),0), hourCost=hours.reduce((a,x)=>a+num(x.horas)*num(x.coste_hora),0), collected=collections.reduce((a,x)=>a+num(x.importe),0), paid=payments.reduce((a,x)=>a+num(x.importe),0);
+    const baseInv=invoices.reduce((a,x)=>a+num(x.base),0), basePur=purchases.reduce((a,x)=>a+num(x.base),0), hourCost=hours.reduce((a,x)=>a+num(x.horas)*num(x.coste_hora),0), collected=collections.reduce((a,x)=>a+num(x.importe),0), paid=payments.reduce((a,x)=>a+num(x.importe),0);
     return {S,p,invoices,purchases,hours,visits,tasks,incidents,docs,budgets,collections,payments,baseInv,basePur,hourCost,collected,paid,margin:baseInv-basePur-hourCost};
   }
 
