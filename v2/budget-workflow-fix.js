@@ -58,6 +58,7 @@
       const existed=!!p.proyecto_id;
       const pid=await ensureProject(p);
       window.APP.sel.project=pid;
+      localStorage.setItem('iriarte_open_project',pid);
       if(!existed)alert('Proyecto creado y vinculado al presupuesto.');
       location.hash='#proyectos';location.reload();
     }catch(err){alert('No se pudo convertir el presupuesto en proyecto:\n'+(err.message||err))}
