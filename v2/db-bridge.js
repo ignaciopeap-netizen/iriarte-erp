@@ -1,12 +1,13 @@
-// Capture the single Supabase client created by app.js so feature modules share one session/client.
+// Iriarte ERP V2 · un único cliente Supabase para toda la aplicación.
 (function(){
   'use strict';
   if(!window.supabase?.createClient || window.__iriarteDbBridgeInstalled)return;
   window.__iriarteDbBridgeInstalled=true;
   const original=window.supabase.createClient.bind(window.supabase);
   window.supabase.createClient=function(...args){
+    if(window.__iriarteDb)return window.__iriarteDb;
     const client=original(...args);
-    if(!window.__iriarteDb)window.__iriarteDb=client;
+    window.__iriarteDb=client;
     return client;
   };
 })();
