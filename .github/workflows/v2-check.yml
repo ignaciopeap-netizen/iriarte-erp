@@ -95,8 +95,10 @@ jobs:
           test -f MIGRACION_FACTURA_DESDE_FASE_V2.sql
           test -f MIGRACION_CONCILIACION_V2.sql
           test -f MIGRACION_CONTROL_INTEGRIDAD_V2.sql
+          test -f MIGRACION_IMPORTACION_BANCO_V2.sql
           grep -q "recalc_factura_totals" MIGRACION_FACTURA_DESDE_PRESUPUESTO_V2.sql
           grep -q "recalc_factura_totals" MIGRACION_FACTURA_DESDE_FASE_V2.sql
           grep -q "conciliar_movimiento_v2" MIGRACION_CONCILIACION_V2.sql
           grep -q "v_control_integridad_erp" MIGRACION_CONTROL_INTEGRIDAD_V2.sql
+          grep -q "materializar_importacion_bancaria_conciliada_v2" MIGRACION_IMPORTACION_BANCO_V2.sql
           echo "Critical SQL workflow files are present"
