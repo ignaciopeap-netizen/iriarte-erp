@@ -47,13 +47,16 @@ jobs:
           grep -q 'src="./app-core.js"' v2/index.html
           grep -q "v_proyectos_operativos" v2/app-core.js
           grep -q "from('proyectos')" v2/project-actions.js
+          grep -q "crear_factura_desde_presupuesto_v2" v2/budget-workflow-fix.js
+          grep -q "crear_factura_desde_fase_v2" v2/billing-phases.js
           grep -q "conciliar_movimiento_v2" v2/reconciliation-sync.js
+          grep -q "v_control_integridad_erp" v2/reports-plus.js
           if grep -q 'src="./bank-import-pro.js"' v2/index.html; then
             echo "Obsolete bank importer must not be loaded" >&2
             exit 1
           fi
           echo "Canonical V2 schema guards passed"
-      - name: Guard specialized handler ordering
+      - name: Guard critical module loading
         run: |
           python - <<'PY'
           from pathlib import Path
@@ -61,13 +64,38 @@ jobs:
           html=Path('v2/index.html').read_text(encoding='utf-8')
           scripts=re.findall(r'<script src="\./([^"]+)"></script>', html)
           pos={name:i for i,name in enumerate(scripts)}
-          required=['app-core.js','document-upload.js','enhancements.js','reconciliation-sync.js','workflow-plus.js']
+          required=[
+            'db-bridge.js','runtime-guard.js','app-core.js','auth-recovery.js','project-actions.js','contacts-plus.js',
+            'document-upload.js','enhancements.js','reconciliation-sync.js','workflow-plus.js','invoice-pro.js','invoice-guard.js',
+            'derived-status-guard.js','budget-workflow-fix.js','project-hub.js','billing-phases.js','bank-import-complete.js',
+            'finance-view-fix.js','reports-plus.js','auto-open.js'
+          ]
           missing=[x for x in required if x not in pos]
           if missing:
-              raise SystemExit('Missing required V2 scripts: '+', '.join(missing))
+              raise SystemExit('Missing critical V2 scripts: '+', '.join(missing))
+          if not pos['db-bridge.js'] < pos['runtime-guard.js'] < pos['app-core.js'] < pos['auth-recovery.js']:
+              raise SystemExit('DB/runtime/auth bootstrap ordering is invalid')
+          if not pos['app-core.js'] < pos['project-actions.js']:
+              raise SystemExit('project-actions.js must load after app-core.js')
           if not pos['app-core.js'] < pos['document-upload.js'] < pos['enhancements.js']:
               raise SystemExit('document-upload.js must load after app-core.js and before enhancements.js')
           if not pos['reconciliation-sync.js'] < pos['workflow-plus.js']:
               raise SystemExit('reconciliation-sync.js must load before workflow-plus.js')
-          print('Specialized handler ordering is correct')
+          if not pos['invoice-pro.js'] < pos['invoice-guard.js'] < pos['derived-status-guard.js']:
+              raise SystemExit('Invoice guards must load after invoice-pro.js')
+          if not pos['budget-workflow-fix.js'] < pos['billing-phases.js']:
+              raise SystemExit('Budget conversion must load before project billing phases')
+          print('Critical V2 module loading and ordering are correct')
           PY
+      - name: Guard SQL workflow files
+        run: |
+          set -e
+          test -f MIGRACION_FACTURA_DESDE_PRESUPUESTO_V2.sql
+          test -f MIGRACION_FACTURA_DESDE_FASE_V2.sql
+          test -f MIGRACION_CONCILIACION_V2.sql
+          test -f MIGRACION_CONTROL_INTEGRIDAD_V2.sql
+          grep -q "recalc_factura_totals" MIGRACION_FACTURA_DESDE_PRESUPUESTO_V2.sql
+          grep -q "recalc_factura_totals" MIGRACION_FACTURA_DESDE_FASE_V2.sql
+          grep -q "conciliar_movimiento_v2" MIGRACION_CONCILIACION_V2.sql
+          grep -q "v_control_integridad_erp" MIGRACION_CONTROL_INTEGRIDAD_V2.sql
+          echo "Critical SQL workflow files are present"
