@@ -2,8 +2,10 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "cleanUrls": true,
   "trailingSlash": false,
+  "buildCommand": "node scripts/build-standalone.mjs",
+  "outputDirectory": ".",
   "redirects": [
-    {"source": "/", "destination": "/v2/", "permanent": false}
+    {"source": "/", "destination": "/v2/standalone", "permanent": false}
   ],
   "headers": [
     {
