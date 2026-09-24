@@ -19,39 +19,25 @@
   async function ensureProject(p){
     const client=db();if(!client)throw new Error('La conexión todavía no está preparada.');
     if(p.proyecto_id){
-      const {data}=await client.from('projects').select('id,es_proyecto').eq('id',p.proyecto_id).maybeSingle();
-      if(data?.id){
-        if(!data.es_proyecto)await client.from('projects').update({es_proyecto:true,estado_gestion:'activo'}).eq('id',data.id);
-        return data.id;
-      }
+      const {data,error}=await client.from('proyectos').select('id').eq('id',p.proyecto_id).maybeSingle();
+      if(error)throw error;
+      if(data?.id)return data.id;
     }
-
-    const projectId=crypto.randomUUID();
-    const name=p.name||p.nombre||'Proyecto';
-    const address=p.address||p.direccion||null;
-    const code=p.ref||p.numero||null;
     const payload={
-      id:projectId,
-      name,
-      client:p.client||null,
+      nombre:p.name||p.nombre||'Proyecto',
       cliente_id:p.cliente_id||null,
-      address,
-      direccion:address,
-      date:dateValue(p),
+      codigo:p.ref||p.numero||null,
+      direccion:p.address||p.direccion||null,
+      estado:'activo',
       fecha_inicio:dateValue(p),
-      ref:code,
-      codigo:code,
-      expte:p.expte||null,
-      status:'Proyecto',
-      estado_gestion:'activo',
-      es_proyecto:true,
+      expediente:p.expte||null,
       importe_contratado:budgetBase(p),
-      descripcion:'Creado desde presupuesto '+(code||p.id)
+      descripcion:'Creado desde presupuesto '+(p.ref||p.numero||p.id)
     };
-    const {error}=await client.from('projects').insert(payload);if(error)throw error;
-    const {error:e2}=await client.from('presupuestos').update({proyecto_id:projectId,estado:'aceptado',status:'proyecto',phase:'Aceptado'}).eq('id',p.id);if(e2)throw e2;
-    p.proyecto_id=projectId;p.estado='aceptado';p.status='proyecto';p.phase='Aceptado';
-    return projectId;
+    const {data,error}=await client.from('proyectos').insert(payload).select('id').single();if(error)throw error;
+    const {error:e2}=await client.from('presupuestos').update({proyecto_id:data.id,estado:'aceptado',status:'proyecto',phase:'Aceptado'}).eq('id',p.id);if(e2)throw e2;
+    p.proyecto_id=data.id;p.estado='aceptado';p.status='proyecto';p.phase='Aceptado';
+    return data.id;
   }
 
   function invoiceLines(p,invoiceId){
