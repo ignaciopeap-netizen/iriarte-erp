@@ -11,7 +11,7 @@ function date(v){const s=String(v??'').trim();if(/^\d{4}-\d{2}-\d{2}$/.test(s))r
 function detect(text){const first=(text.split(/\r?\n/).find(Boolean)||'');return first.includes('\t')?'\t':first.includes(';')?';':','}
 function split(line,d){return line.split(d).map(x=>x.trim().replace(/^"|"$/g,''))}
 function idx(headers,names){for(const n of names){const i=headers.findIndex(h=>h===n||h.includes(n));if(i>=0)return i}return-1}
-function exactOrLoose(rows,raw,fields){const q=norm(raw);if(!q)return null;return (rows||[]).find(x=>fields.some(f=>norm(x[f])===q))?.id||(rows||[]).find(x=>fields.some(f=>norm(x[f]).includes(q)||q.includes(norm(x[f]))))?.id||null}
+function exactOrLoose(rows,raw,fields){const q=norm(raw);if(!q)return null;const list=rows||[];const exact=list.find(x=>fields.some(f=>{const v=norm(x[f]);return v&&v===q}));if(exact)return exact.id;const loose=list.find(x=>fields.some(f=>{const v=norm(x[f]);return v&&(v.includes(q)||q.includes(v))}));return loose?.id||null}
 function matchProject(raw){return exactOrLoose(window.APP?.data?.proyectos,raw,['nombre','codigo'])}
 function matchClient(raw){return exactOrLoose(window.APP?.data?.clientes,raw,['nombre','cif'])}
 function matchSupplier(raw){return exactOrLoose(window.APP?.data?.proveedores,raw,['nombre','cif'])}
