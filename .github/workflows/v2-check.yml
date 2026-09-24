@@ -33,3 +33,18 @@ jobs:
               raise SystemExit('Missing V2 assets: '+', '.join(missing))
           print('All local V2 assets are present:', ', '.join(refs))
           PY
+      - name: Guard known schema regressions
+        run: |
+          set -e
+          if grep -R "base_imponible" v2 --include='*.js'; then
+            echo "Do not use removed/non-canonical base_imponible in V2" >&2
+            exit 1
+          fi
+          if grep -q 'src="./app.js"' v2/index.html; then
+            echo "V2 must use app-core.js, not the removed monolithic app.js" >&2
+            exit 1
+          fi
+          grep -q 'src="./app-core.js"' v2/index.html
+          grep -q "v_proyectos_operativos" v2/app-core.js
+          grep -q "from('proyectos')" v2/project-actions.js
+          echo "Canonical V2 schema guards passed"
