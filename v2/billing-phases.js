@@ -20,20 +20,24 @@
 
   async function phaseForm(pid,existing=null){
     const budgets=budgetsForProject(pid);if(!budgets.length){alert('Este proyecto todavía no tiene un presupuesto vinculado.');return}
+    const locked=!!existing?.factura_id;
     const b=existing?budgets.find(x=>String(x.id)===String(existing.presupuesto_id))||budgets[0]:budgets[0];
     modal(existing?'Editar fase de facturación':'Nueva fase de facturación',`<div class="form-grid">
-      <label>Presupuesto<select name="presupuesto_id">${budgets.map(x=>`<option value="${x.id}" ${String(x.id)===String(existing?.presupuesto_id||b.id)?'selected':''}>${esc(x.name||x.nombre||'Presupuesto')}</option>`).join('')}</select></label>
+      ${locked?`<label>Presupuesto<input value="${esc(b?.name||b?.nombre||'Presupuesto')}" disabled></label>`:`<label>Presupuesto<select name="presupuesto_id">${budgets.map(x=>`<option value="${x.id}" ${String(x.id)===String(existing?.presupuesto_id||b.id)?'selected':''}>${esc(x.name||x.nombre||'Presupuesto')}</option>`).join('')}</select></label>`}
       <label>Orden<input name="orden" type="number" min="1" step="1" value="${existing?.orden||1}"></label>
       <label class="full">Nombre / hito<input name="nombre" required value="${esc(existing?.nombre||'')}" placeholder="Anticipo, entrega de proyecto, fin de obra…"></label>
-      <label>Porcentaje %<input name="porcentaje" type="number" step="0.01" min="0" max="100" value="${existing?.porcentaje??''}"></label>
-      <label>Importe €<input name="importe" type="number" step="0.01" min="0" value="${existing?.importe??''}"></label>
+      <label>Porcentaje %<input name="porcentaje" type="number" step="0.01" min="0" max="100" value="${existing?.porcentaje??''}" ${locked?'disabled':''}></label>
+      <label>Importe €<input name="importe" type="number" step="0.01" min="0" value="${existing?.importe??''}" ${locked?'disabled':''}></label>
       <label>Fecha prevista<input name="fecha_prevista" type="date" value="${esc(existing?.fecha_prevista||'')}"></label>
-      <label>Estado<select name="estado"><option ${existing?.estado==='pendiente'?'selected':''}>pendiente</option><option ${existing?.estado==='facturada'?'selected':''}>facturada</option><option ${existing?.estado==='cobrada'?'selected':''}>cobrada</option><option ${existing?.estado==='anulada'?'selected':''}>anulada</option></select></label>
+      ${locked?`<label>Estado<input value="${esc(existing.estado||'facturada')}" disabled></label>`:`<label>Estado<select name="estado"><option ${existing?.estado==='pendiente'?'selected':''}>pendiente</option><option ${existing?.estado==='anulada'?'selected':''}>anulada</option></select></label>`}
       <label class="full">Descripción<textarea name="descripcion">${esc(existing?.descripcion||'')}</textarea></label>
+      ${locked?'<div class="notice full"><b>Fase ya facturada.</b> El importe y porcentaje quedan bloqueados para no descuadrar la factura ya creada. La factura se edita desde Facturas.</div>':''}
     </div>`,async f=>{
-      const budget=budgets.find(x=>String(x.id)===String(f.presupuesto_id));const base=num(budget?.base);
-      let pct=num(f.porcentaje),amount=num(f.importe);if(!amount&&pct)amount=base*pct/100;if(!pct&&amount&&base)pct=amount/base*100;
-      const payload={presupuesto_id:f.presupuesto_id,orden:Math.max(1,Math.round(num(f.orden)||1)),nombre:f.nombre,descripcion:f.descripcion||null,porcentaje:pct||null,importe:amount||null,fecha_prevista:f.fecha_prevista||null,estado:f.estado||'pendiente'};
+      const budgetId=locked?existing.presupuesto_id:f.presupuesto_id;
+      const budget=budgets.find(x=>String(x.id)===String(budgetId));const base=num(budget?.base);
+      let pct=locked?num(existing.porcentaje):num(f.porcentaje),amount=locked?num(existing.importe):num(f.importe);
+      if(!locked){if(!amount&&pct)amount=base*pct/100;if(!pct&&amount&&base)pct=amount/base*100}
+      const payload={presupuesto_id:budgetId,orden:Math.max(1,Math.round(num(f.orden)||1)),nombre:f.nombre,descripcion:f.descripcion||null,porcentaje:pct||null,importe:amount||null,fecha_prevista:f.fecha_prevista||null,estado:locked?(existing.estado||'facturada'):(f.estado||'pendiente')};
       const client=db();if(existing){const {error}=await client.from('presupuesto_fases_facturacion').update(payload).eq('id',existing.id);if(error)throw error}else{const {error}=await client.from('presupuesto_fases_facturacion').insert(payload);if(error)throw error}
     });
   }
@@ -45,8 +49,7 @@
       const {data,error}=await client.rpc('crear_factura_desde_fase_v2',{p_fase_id:phase.id});if(error)throw error;
       const invoiceId=data?.invoice_id;if(!invoiceId)throw new Error('La base de datos no devolvió la factura creada.');
       if(data?.project_id)window.APP.sel.project=data.project_id;
-      localStorage.setItem('iriarte_open_invoice',invoiceId);
-      location.hash='#facturas';location.reload();
+      localStorage.setItem('iriarte_open_invoice',invoiceId);location.hash='#facturas';location.reload();
     }catch(err){alert('No se pudo facturar la fase:\n'+(err.message||err))}
   }
 
