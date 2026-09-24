@@ -11,12 +11,16 @@ let token=0;
 function integrityPanel(i={}){
  const labels=[
   ['Facturas sin proyecto','facturas_sin_proyecto'],['Compras sin proyecto','compras_sin_proyecto'],['Horas sin proyecto','horas_sin_proyecto'],
-  ['Documentos sin proyecto','documentos_sin_proyecto'],['Movimientos sin proyecto','movimientos_sin_proyecto'],['Facturas con líneas y total 0','facturas_total_cero_con_lineas'],
+  ['Documentos sin proyecto','documentos_sin_proyecto'],['Movimientos sin proyecto','movimientos_sin_proyecto'],['Visitas de obra sin proyecto','visitas_sin_proyecto'],
+  ['Tareas de obra sin proyecto','tareas_sin_proyecto'],['Incidencias de obra sin proyecto','incidencias_sin_proyecto'],['Facturas con líneas y total 0','facturas_total_cero_con_lineas'],
   ['Facturas cobradas incoherentes','facturas_cobradas_incoherentes'],['Compras pagadas incoherentes','compras_pagadas_incoherentes'],
+  ['Documento de factura con proyecto distinto','documentos_factura_proyecto_incoherente'],['Documento de compra con proyecto distinto','documentos_compra_proyecto_incoherente'],
+  ['Movimiento de factura con proyecto distinto','movimientos_factura_proyecto_incoherente'],['Movimiento de compra con proyecto distinto','movimientos_compra_proyecto_incoherente'],
+  ['Cobros conciliados sin cobro real','cobros_conciliados_sin_cobro'],['Pagos conciliados sin pago real','pagos_conciliados_sin_pago'],
   ['Fases facturadas sin factura','fases_facturadas_sin_factura'],['Fases con factura y estado incoherente','fases_con_factura_estado_incoherente'],['Presupuestos convertidos sin proyecto','presupuestos_proyecto_sin_vinculo']
  ];
  const issues=labels.reduce((a,[,k])=>a+num(i[k]),0);
- if(!issues)return `<div class="notice" style="margin-top:14px;background:#e8f0e5;color:#30482b"><b>Control de integridad: correcto.</b> No se han detectado incoherencias en vínculos, estados ni totales críticos.</div>`;
+ if(!issues)return `<div class="notice" style="margin-top:14px;background:#e8f0e5;color:#30482b"><b>Control de integridad: correcto.</b> No se han detectado incoherencias en vínculos, estados, documentos, conciliación ni totales críticos.</div>`;
  return `<div class="card panel" style="margin-top:14px"><h3>Control de integridad</h3><div class="notice" style="background:#fff2d8;color:#745b24;margin-bottom:10px"><b>${issues} incidencias detectadas.</b> Conviene corregirlas antes de utilizar los informes como cierre definitivo.</div><div class="grid cols-4">${labels.filter(([,k])=>num(i[k])>0).map(([l,k])=>`<div class="info"><small>${esc(l)}</small><b class="negative">${num(i[k])}</b></div>`).join('')}</div></div>`;
 }
 async function render(){
