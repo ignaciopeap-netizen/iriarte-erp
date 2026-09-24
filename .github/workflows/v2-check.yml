@@ -47,4 +47,27 @@ jobs:
           grep -q 'src="./app-core.js"' v2/index.html
           grep -q "v_proyectos_operativos" v2/app-core.js
           grep -q "from('proyectos')" v2/project-actions.js
+          grep -q "conciliar_movimiento_v2" v2/reconciliation-sync.js
+          if grep -q 'src="./bank-import-pro.js"' v2/index.html; then
+            echo "Obsolete bank importer must not be loaded" >&2
+            exit 1
+          fi
           echo "Canonical V2 schema guards passed"
+      - name: Guard specialized handler ordering
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('v2/index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script src="\./([^"]+)"></script>', html)
+          pos={name:i for i,name in enumerate(scripts)}
+          required=['app-core.js','document-upload.js','enhancements.js','reconciliation-sync.js','workflow-plus.js']
+          missing=[x for x in required if x not in pos]
+          if missing:
+              raise SystemExit('Missing required V2 scripts: '+', '.join(missing))
+          if not pos['app-core.js'] < pos['document-upload.js'] < pos['enhancements.js']:
+              raise SystemExit('document-upload.js must load after app-core.js and before enhancements.js')
+          if not pos['reconciliation-sync.js'] < pos['workflow-plus.js']:
+              raise SystemExit('reconciliation-sync.js must load before workflow-plus.js')
+          print('Specialized handler ordering is correct')
+          PY
