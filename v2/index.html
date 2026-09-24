@@ -1,0 +1,39 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Iriarte ERP V2</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="auth-screen" class="auth-screen">
+    <form id="login-form" class="auth-card">
+      <p class="eyebrow">Sonsoles Pérez Iriarte</p>
+      <h1>Iriarte ERP</h1>
+      <label>Email<input id="login-email" type="email" autocomplete="username" required></label>
+      <label>Contraseña<input id="login-password" type="password" autocomplete="current-password" required></label>
+      <div id="login-error" class="error"></div>
+      <button class="btn primary" type="submit">Entrar</button>
+    </form>
+  </div>
+
+  <div id="app-shell" class="shell hidden">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">SPI</div>
+        <div><strong>Sonsoles Pérez Iriarte</strong><small>JARDINERÍA Y PAISAJISMO</small></div>
+      </div>
+      <nav id="main-nav" class="main-nav"></nav>
+      <div class="userbox"><span id="user-name"></span><button id="logout-btn" class="link-button">Salir</button></div>
+    </header>
+    <main id="app-view" class="app-view"></main>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toast" class="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
