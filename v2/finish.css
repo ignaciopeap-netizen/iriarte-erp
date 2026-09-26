@@ -1,0 +1,55 @@
+/* Iriarte ERP V2 · final UX polish */
+:root{--surface-soft:#f8f6ef;--surface-green:#f0f4ed;--line-strong:#cec7b8;--shadow-soft:0 10px 30px rgba(35,44,31,.055)}
+html{scroll-behavior:smooth}
+body{background:radial-gradient(circle at 15% -10%,rgba(255,255,255,.72),transparent 34%),var(--cream)}
+::selection{background:#dfe8db;color:#21351e}
+.auth-screen{overflow:auto;background:radial-gradient(circle at 18% 15%,rgba(255,255,255,.92),transparent 29%),linear-gradient(135deg,#f5f1e7 0%,#ebe5d7 100%)}
+.auth-screen:before{content:"";position:fixed;width:460px;height:460px;border-radius:50%;right:-170px;bottom:-210px;border:1px solid rgba(63,90,53,.10);box-shadow:0 0 0 54px rgba(63,90,53,.025),0 0 0 108px rgba(63,90,53,.018);pointer-events:none}
+.auth-card{position:relative;width:min(470px,95vw);padding:38px 40px 34px;border-color:rgba(206,199,184,.85);box-shadow:0 34px 100px rgba(35,44,31,.13)}
+.auth-brand{display:flex;align-items:center;justify-content:center;min-height:86px;margin:-4px 0 20px;padding-bottom:19px;border-bottom:1px solid #ece6da}
+.auth-brand img{display:block;max-width:230px;max-height:74px;width:auto;height:auto;object-fit:contain}
+.auth-card .eyebrow{text-align:center;text-transform:uppercase;letter-spacing:.16em;font-weight:700;color:#71806b;margin:0 0 7px}
+.auth-card h1{text-align:center;color:#253a22;font-size:34px;margin:0 0 7px}
+.auth-subtitle{text-align:center;color:var(--muted);font-size:12px;margin:0 0 25px;line-height:1.5}
+.auth-card .btn.primary{width:100%;margin-top:4px;padding:12px 16px;font-weight:700}
+.auth-card .link-button{width:100%;text-align:center;margin-top:13px!important;font-size:11px}
+.brand-mark.with-logo{width:43px;height:43px;border:0;border-radius:0;box-shadow:none;background:transparent}
+.brand-mark.with-logo img{display:block;width:43px;height:43px;object-fit:contain}
+.topbar{box-shadow:0 1px 0 rgba(70,76,64,.025);border-bottom-color:#e3ddcf}
+.main-nav{align-items:center}
+.nav-item{position:relative}
+.nav-item[data-group-start="true"]{margin-left:8px;padding-left:14px}
+.nav-item[data-group-start="true"]:before{content:"";position:absolute;left:2px;top:8px;bottom:8px;width:1px;background:#dcd6ca}
+.nav-item.active:after{content:"";position:absolute;left:10px;right:10px;bottom:3px;height:2px;border-radius:2px;background:var(--green2);opacity:.72}
+.app-view{padding-top:22px;padding-bottom:44px}
+.page-head{min-height:44px;margin-bottom:18px}
+.page-head>div:first-child small,.page-head small{letter-spacing:.06em}
+.card{box-shadow:var(--shadow-soft)}
+.card.panel{border-color:#e6e0d4}
+.panel>h3:first-child{margin-top:0}
+.kpi{position:relative;overflow:hidden}
+.kpi:after{content:"";position:absolute;right:-19px;bottom:-25px;width:70px;height:70px;border-radius:50%;background:rgba(85,118,74,.035)}
+.info{background:linear-gradient(180deg,#fff,#fdfcf8)}
+.table th{font-size:10px;text-transform:uppercase;letter-spacing:.055em;color:#7b7d75}
+.table td{line-height:1.42}
+.table tbody tr:last-child td{border-bottom:0}
+.table td .btn{padding:6px 9px;font-size:11px}
+.master{max-height:calc(100vh - 135px);overflow:auto;align-self:start;position:sticky;top:87px}
+.master-item b{line-height:1.35}.master-item small{display:block;margin-top:3px;line-height:1.35}
+.empty{background:linear-gradient(180deg,#fbfaf6,#f8f5ed);padding:34px 24px}
+.empty:before{content:"·";display:block;margin:0 auto 7px;width:28px;height:28px;border:1px solid #d8d1c2;border-radius:50%;line-height:23px;font:22px Georgia,serif;color:#9a9b92}
+.badge{text-transform:capitalize;letter-spacing:.015em}
+.ux-project-context{display:flex;align-items:center;gap:10px;position:sticky;top:78px;z-index:35;margin:-4px 0 14px;padding:9px 11px 9px 13px;border:1px solid #dce5d8;border-radius:10px;background:rgba(244,248,241,.94);backdrop-filter:blur(10px);box-shadow:0 7px 20px rgba(35,44,31,.04)}
+.ux-context-dot{width:7px;height:7px;flex:0 0 auto;border-radius:50%;background:#6d8c61;box-shadow:0 0 0 4px rgba(109,140,97,.10)}
+.ux-context-copy{min-width:0;display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;font-size:11px;color:var(--muted)}
+.ux-context-copy b{font-size:12px;color:#30452b;max-width:470px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ux-context-actions{margin-left:auto;display:flex;gap:6px}.ux-context-actions .btn{padding:6px 9px;font-size:10px;background:rgba(255,255,255,.8)}
+.ux-dashboard-links{display:flex;gap:8px;flex-wrap:wrap;margin:-4px 0 14px}
+.ux-dashboard-link{display:inline-flex;align-items:center;gap:7px;text-decoration:none;color:#42513d;background:rgba(255,253,248,.8);border:1px solid #ded8ca;padding:8px 11px;border-radius:9px;font-size:11px;font-weight:650;cursor:pointer}
+.ux-dashboard-link:hover{background:#fff;border-color:#bfcbb9;box-shadow:0 5px 14px rgba(35,44,31,.05)}
+.ux-dashboard-link span{display:grid;place-items:center;width:19px;height:19px;border-radius:50%;background:#e8eee4;color:#496643;font-size:11px}
+body.ux-modal-open{overflow:hidden}
+@media(max-width:1050px){.nav-item[data-group-start="true"]{margin-left:2px;padding-left:9px}.nav-item[data-group-start="true"]:before{display:none}.brand strong{font-size:13px}.brand small{display:none}}
+@media(max-width:820px){.auth-card{padding:30px 24px}.ux-project-context{top:116px}.master{position:static;max-height:none}.brand-mark.with-logo{display:block}.brand{display:flex!important}.brand>div:last-child{display:none}.topbar{grid-template-columns:auto 1fr auto}.main-nav{grid-column:1/-1}.ux-context-copy span{display:none}}
+@media(max-width:560px){.auth-brand img{max-width:190px}.auth-card h1{font-size:29px}.ux-project-context{top:112px;padding:8px}.ux-context-actions .btn:first-child{display:none}.ux-dashboard-links{display:grid;grid-template-columns:1fr 1fr}.ux-dashboard-link{justify-content:center}.page-head{margin-bottom:12px}}
+@media print{.ux-project-context,.ux-dashboard-links{display:none!important}}
