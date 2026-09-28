@@ -1,4 +1,4 @@
-// Iriarte ERP V2 · rentabilidad de proyecto: excluye documentos anulados y deriva saldos de transacciones reales
+// Iriarte ERP V2 · rentabilidad de proyecto: solo facturas emitidas y costes reales
 (function(){
 'use strict';
 const $=s=>document.querySelector(s);
@@ -10,7 +10,7 @@ function row(label,value,cls=''){return `<div class="info"><small>${label}</smal
 function activeProjectData(){
  const A=window.APP,D=A?.data||{},pid=A?.sel?.project;if(!pid)return null;
  const byProject=(rows,key='proyecto_id')=>(rows||[]).filter(x=>String(x[key]??x.project_id??'')===String(pid));
- const invoices=byProject(D.facturas).filter(x=>String(x.estado||'').toLowerCase()!=='anulada');
+ const invoices=byProject(D.facturas).filter(x=>!['anulada','borrador'].includes(String(x.estado||'borrador').toLowerCase()));
  const purchases=byProject(D.compras).filter(x=>String(x.estado||'').toLowerCase()!=='anulada');
  const hours=byProject(D.horas);
  const invoiceIds=new Set(invoices.map(x=>String(x.id))),purchaseIds=new Set(purchases.map(x=>String(x.id)));
