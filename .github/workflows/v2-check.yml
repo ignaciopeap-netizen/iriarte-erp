@@ -54,7 +54,8 @@ jobs:
           grep -q "v_control_integridad_erp" v2/reports-plus.js
           grep -q "cobros_conciliados_sin_cobro" v2/reports-plus.js
           grep -q "Gastos generales vinculados" v2/reports-plus.js
-          grep -q "estado.*anulada" v2/project-finance-guard.js
+          grep -q "borrador.*anulada\|anulada.*borrador" v2/project-finance-guard.js
+          grep -q "issued-finance-ui.js" v2/index.html
           if grep -q 'src="./bank-import-pro.js"' v2/index.html; then
             echo "Obsolete bank importer must not be loaded" >&2
             exit 1
@@ -72,7 +73,7 @@ jobs:
             'db-bridge.js','runtime-guard.js','app-core.js','auth-recovery.js','project-actions.js','contacts-plus.js','contact-hubs.js',
             'document-upload.js','document-context.js','enhancements.js','reconciliation-sync.js','workflow-plus.js','invoice-edit-context.js','invoice-pro.js','invoice-atomic-save.js','invoice-guard.js',
             'derived-status-guard.js','budget-workflow-fix.js','project-hub.js','project-finance-guard.js','project-overhead-view.js','billing-phases.js','purchases-plus.js','financial-document-links.js','bank-import-complete.js',
-            'finance-view-fix.js','reports-plus.js','auto-open.js'
+            'finance-view-fix.js','issued-finance-ui.js','reports-plus.js','auto-open.js','dashboard-attention.js','ux-finish.js'
           ]
           missing=[x for x in required if x not in pos]
           if missing:
@@ -93,6 +94,8 @@ jobs:
               raise SystemExit('Project finance/overhead ordering is invalid')
           if not pos['purchases-plus.js'] < pos['financial-document-links.js']:
               raise SystemExit('Financial document links must load after purchases-plus.js')
+          if not pos['finance-view-fix.js'] < pos['issued-finance-ui.js'] < pos['reports-plus.js']:
+              raise SystemExit('Issued finance UI must load after finance rendering and before reports')
           print('Critical V2 module loading and ordering are correct')
           PY
       - name: Guard SQL workflow files
@@ -107,6 +110,8 @@ jobs:
           test -f MIGRACION_IMPORTACION_BANCO_V2.sql
           test -f MIGRACION_RECALC_ESTADOS_TOTALES_V2.sql
           test -f MIGRACION_VINCULOS_DOCUMENTALES_V2.sql
+          test -f MIGRACION_FINANZAS_EMITIDAS_V2.sql
+          test -f MIGRACION_VALIDACION_COBROS_PAGOS_V2.sql
           grep -q "recalc_factura_totals" MIGRACION_FACTURA_DESDE_PRESUPUESTO_V2.sql
           grep -q "recalc_factura_totals" MIGRACION_FACTURA_DESDE_FASE_V2.sql
           grep -q "guardar_factura_v2" MIGRACION_GUARDAR_FACTURA_V2.sql
@@ -118,4 +123,7 @@ jobs:
           grep -q "recalcular_estado_compra_por_total_v2" MIGRACION_RECALC_ESTADOS_TOTALES_V2.sql
           grep -q "documentos_factura_id_fkey" MIGRACION_VINCULOS_DOCUMENTALES_V2.sql
           grep -q "presupuestos_proyecto_id_fkey" MIGRACION_VINCULOS_DOCUMENTALES_V2.sql
+          grep -q "not in ('anulada','borrador')" MIGRACION_FINANZAS_EMITIDAS_V2.sql
+          grep -q "validar_cobro_v2" MIGRACION_VALIDACION_COBROS_PAGOS_V2.sql
+          grep -q "validar_pago_v2" MIGRACION_VALIDACION_COBROS_PAGOS_V2.sql
           echo "Critical SQL workflow files are present"
