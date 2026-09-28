@@ -18,7 +18,7 @@ function integrityPanel(i={}){
   ['Documento de factura con proyecto distinto','documentos_factura_proyecto_incoherente'],['Documento de compra con proyecto distinto','documentos_compra_proyecto_incoherente'],
   ['Movimiento de factura con proyecto distinto','movimientos_factura_proyecto_incoherente'],['Movimiento de compra con proyecto distinto','movimientos_compra_proyecto_incoherente'],
   ['Cobros conciliados sin cobro real','cobros_conciliados_sin_cobro'],['Pagos conciliados sin pago real','pagos_conciliados_sin_pago'],
-  ['Fases facturadas sin factura','fases_facturadas_sin_factura'],['Fases borrador sin factura','fases_borrador_sin_factura'],['Fases con factura y estado incoherente','fases_con_factura_estado_incoherente'],['Presupuestos convertidos sin proyecto','presupuestos_proyecto_sin_vinculo']
+  ['Fases facturadas sin factura','fases_facturadas_sin_factura'],['Fases pendientes con factura ya emitida','fases_pendientes_con_factura_emitida'],['Fases con factura y estado incoherente','fases_con_factura_estado_incoherente'],['Presupuestos convertidos sin proyecto','presupuestos_proyecto_sin_vinculo']
  ];
  const issues=labels.reduce((a,[,k])=>a+num(i[k]),0);
  if(!issues)return `<div class="notice" style="margin-top:14px;background:#e8f0e5;color:#30482b"><b>Control de integridad: correcto.</b> No se han detectado incoherencias en vínculos, estados, documentos, conciliación ni totales críticos.</div>`;
