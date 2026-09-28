@@ -1,5 +1,6 @@
 -- IRIARTE ERP V2 · estado de fase derivado de su factura
--- Una factura en borrador no convierte todavía la fase en "facturada".
+-- Una factura en borrador mantiene la fase como "pendiente" hasta su emisión.
+-- Así respetamos los estados canónicos de presupuesto_fases_facturacion.
 
 create or replace function public.sync_presupuesto_fase_from_factura()
 returns trigger
@@ -11,7 +12,7 @@ begin
     update public.presupuesto_fases_facturacion
     set factura_id=new.id,
         estado=case lower(coalesce(new.estado,'borrador'))
-          when 'borrador' then 'borrador'
+          when 'borrador' then 'pendiente'
           when 'cobrada' then 'cobrada'
           when 'anulada' then 'anulada'
           else 'facturada'
@@ -38,7 +39,7 @@ begin
 
   if found then
     new.estado := case v_estado_factura
-      when 'borrador' then 'borrador'
+      when 'borrador' then 'pendiente'
       when 'cobrada' then 'cobrada'
       when 'anulada' then 'anulada'
       else 'facturada'
@@ -53,10 +54,9 @@ create trigger trg_normalizar_estado_fase_factura_v2
 before insert or update of factura_id,estado on public.presupuesto_fases_facturacion
 for each row execute function public.normalizar_estado_fase_factura_v2();
 
--- Normaliza las fases ya vinculadas sin tocar fases todavía no facturadas.
 update public.presupuesto_fases_facturacion pf
 set estado=case lower(coalesce(f.estado,'borrador'))
-  when 'borrador' then 'borrador'
+  when 'borrador' then 'pendiente'
   when 'cobrada' then 'cobrada'
   when 'anulada' then 'anulada'
   else 'facturada'
