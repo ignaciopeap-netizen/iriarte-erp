@@ -51,6 +51,9 @@ jobs:
           grep -q "crear_factura_desde_fase_v2" v2/billing-phases.js
           grep -q "guardar_factura_v2" v2/invoice-atomic-save.js
           grep -q "conciliar_movimiento_v2" v2/reconciliation-sync.js
+          grep -q "Solo se muestran facturas emitidas" v2/reconciliation-sync.js
+          grep -q "filter(issuedInvoice)" v2/workflow-plus.js
+          grep -q "Emítela antes de registrar cobros" v2/workflow-plus.js
           grep -q "v_control_integridad_erp" v2/reports-plus.js
           grep -q "cobros_conciliados_sin_cobro" v2/reports-plus.js
           grep -q "facturas_borrador_con_cobros" v2/reports-plus.js
