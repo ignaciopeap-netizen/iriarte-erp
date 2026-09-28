@@ -15,10 +15,26 @@ declare
   v_id uuid;
   v_line jsonb;
   v_order integer := 0;
-  v_requested_state text := coalesce(nullif(p_cabecera->>'estado',''),'borrador');
+  v_requested_state text := lower(coalesce(nullif(p_cabecera->>'estado',''),'borrador'));
   v_total numeric := 0;
   v_cobrado numeric := 0;
+  v_lines jsonb := coalesce(p_lineas,'[]'::jsonb);
 begin
+  if v_requested_state not in ('borrador','anulada') then
+    if nullif(trim(coalesce(p_cabecera->>'numero','')),'') is null then
+      raise exception 'Para emitir la factura necesitas un número de factura';
+    end if;
+    if nullif(p_cabecera->>'cliente_id','') is null then
+      raise exception 'Para emitir la factura necesitas seleccionar un cliente';
+    end if;
+    if nullif(p_cabecera->>'proyecto_id','') is null then
+      raise exception 'Para emitir la factura necesitas vincularla a un proyecto';
+    end if;
+    if jsonb_typeof(v_lines)<>'array' or jsonb_array_length(v_lines)=0 then
+      raise exception 'Para emitir la factura necesitas al menos una línea';
+    end if;
+  end if;
+
   if p_factura_id is null then
     insert into public.facturas(
       numero,fecha,fecha_vencimiento,cliente_id,proyecto_id,concepto,estado,
@@ -60,7 +76,7 @@ begin
     delete from public.factura_lineas where factura_id=v_id;
   end if;
 
-  for v_line in select value from jsonb_array_elements(coalesce(p_lineas,'[]'::jsonb)) loop
+  for v_line in select value from jsonb_array_elements(v_lines) loop
     v_order := v_order + 1;
     insert into public.factura_lineas(
       factura_id,orden,codigo,seccion,descripcion,ubicacion,unidad,
