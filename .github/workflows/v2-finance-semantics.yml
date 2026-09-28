@@ -1,0 +1,24 @@
+name: V2 finance semantics
+
+on:
+  push:
+    branches: [unified-v2]
+  pull_request:
+    branches: [main]
+
+jobs:
+  finance-semantics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Guard draft invoice semantics
+        run: |
+          set -e
+          grep -q "const issued=.*borrador.*anulada" v2/project-overhead-view.js
+          grep -q "const issued=.*borrador.*anulada" v2/project-hub.js
+          grep -q "draftInvoices" v2/project-hub.js
+          grep -q "facturas emitidas" v2/project-hub.js
+          grep -q "Solo se muestran facturas emitidas" v2/reconciliation-sync.js
+          grep -q "filter(issuedInvoice)" v2/workflow-plus.js
+          grep -q "Emítela antes de registrar cobros" v2/workflow-plus.js
+          echo "Draft invoices are excluded from financial KPIs and collection workflows"
