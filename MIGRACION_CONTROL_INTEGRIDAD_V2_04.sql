@@ -1,6 +1,6 @@
--- IRIARTE ERP V2 · integridad de fases tras separar borrador de facturación emitida
--- Una fase con factura en borrador permanece "pendiente". Detectamos únicamente
--- si una fase sigue pendiente aunque su factura ya haya sido emitida/cobrada.
+-- IRIARTE ERP V2 · integridad de fases y finanzas
+-- Una fase con factura en borrador permanece "pendiente". Los movimientos bancarios
+-- todavía sin conciliar pueden estar sin proyecto: solo es incoherencia si ya están conciliados.
 
 do $$
 begin
@@ -29,7 +29,7 @@ select
   (select count(*) from public.compras where proyecto_id is null)::integer as compras_sin_proyecto,
   (select count(*) from public.horas_proyecto where proyecto_id is null)::integer as horas_sin_proyecto,
   (select count(*) from public.documentos where proyecto_id is null)::integer as documentos_sin_proyecto,
-  (select count(*) from public.movimientos_financieros where proyecto_id is null)::integer as movimientos_sin_proyecto,
+  (select count(*) from public.movimientos_financieros where conciliado=true and proyecto_id is null)::integer as movimientos_sin_proyecto,
   (select count(*) from inv where total=0 and lineas>0)::integer as facturas_total_cero_con_lineas,
   (select count(*) from inv where estado='cobrada' and cobrado+0.01<total)::integer as facturas_cobradas_incoherentes,
   (select count(*) from pur where estado='pagada' and pagado+0.01<total)::integer as compras_pagadas_incoherentes,
