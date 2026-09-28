@@ -53,6 +53,8 @@ jobs:
           grep -q "conciliar_movimiento_v2" v2/reconciliation-sync.js
           grep -q "v_control_integridad_erp" v2/reports-plus.js
           grep -q "cobros_conciliados_sin_cobro" v2/reports-plus.js
+          grep -q "facturas_borrador_con_cobros" v2/reports-plus.js
+          grep -q "fases_borrador_sin_factura" v2/reports-plus.js
           grep -q "Gastos generales vinculados" v2/reports-plus.js
           grep -q "borrador.*anulada\|anulada.*borrador" v2/project-finance-guard.js
           grep -q "issued-finance-ui.js" v2/index.html
@@ -107,17 +109,21 @@ jobs:
           test -f MIGRACION_CONCILIACION_V2.sql
           test -f MIGRACION_CONTROL_INTEGRIDAD_V2.sql
           test -f MIGRACION_CONTROL_INTEGRIDAD_V2_02.sql
+          test -f MIGRACION_CONTROL_INTEGRIDAD_V2_03.sql
           test -f MIGRACION_IMPORTACION_BANCO_V2.sql
           test -f MIGRACION_RECALC_ESTADOS_TOTALES_V2.sql
           test -f MIGRACION_VINCULOS_DOCUMENTALES_V2.sql
           test -f MIGRACION_FINANZAS_EMITIDAS_V2.sql
           test -f MIGRACION_VALIDACION_COBROS_PAGOS_V2.sql
+          test -f MIGRACION_FASE_ESTADO_FACTURA_V2.sql
           grep -q "recalc_factura_totals" MIGRACION_FACTURA_DESDE_PRESUPUESTO_V2.sql
           grep -q "recalc_factura_totals" MIGRACION_FACTURA_DESDE_FASE_V2.sql
           grep -q "guardar_factura_v2" MIGRACION_GUARDAR_FACTURA_V2.sql
           grep -q "conciliar_movimiento_v2" MIGRACION_CONCILIACION_V2.sql
           grep -q "v_control_integridad_erp" MIGRACION_CONTROL_INTEGRIDAD_V2.sql
           grep -q "documentos_factura_proyecto_incoherente" MIGRACION_CONTROL_INTEGRIDAD_V2_02.sql
+          grep -q "facturas_borrador_con_cobros" MIGRACION_CONTROL_INTEGRIDAD_V2_03.sql
+          grep -q "fases_borrador_sin_factura" MIGRACION_CONTROL_INTEGRIDAD_V2_03.sql
           grep -q "materializar_importacion_bancaria_conciliada_v2" MIGRACION_IMPORTACION_BANCO_V2.sql
           grep -q "recalcular_estado_factura_por_total_v2" MIGRACION_RECALC_ESTADOS_TOTALES_V2.sql
           grep -q "recalcular_estado_compra_por_total_v2" MIGRACION_RECALC_ESTADOS_TOTALES_V2.sql
@@ -126,4 +132,5 @@ jobs:
           grep -q "not in ('anulada','borrador')" MIGRACION_FINANZAS_EMITIDAS_V2.sql
           grep -q "validar_cobro_v2" MIGRACION_VALIDACION_COBROS_PAGOS_V2.sql
           grep -q "validar_pago_v2" MIGRACION_VALIDACION_COBROS_PAGOS_V2.sql
+          grep -q "normalizar_estado_fase_factura_v2" MIGRACION_FASE_ESTADO_FACTURA_V2.sql
           echo "Critical SQL workflow files are present"
