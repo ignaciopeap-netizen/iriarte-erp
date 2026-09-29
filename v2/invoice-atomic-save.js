@@ -4,6 +4,11 @@
 const db=()=>window.__iriarteDb;
 const $=s=>document.querySelector(s);
 const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[m]));
+function friendly(err){
+ const text=String(err?.message||err||'');
+ if(err?.code==='23505'&&/facturas_ejercicio_numero_unique|numero/i.test(text))return 'Ese número de factura ya está utilizado en el mismo ejercicio. Usa otro número o revisa la factura existente.';
+ return text;
+}
 function collectLines(form){
   return [...form.querySelectorAll('[data-invoice-line]')].map(row=>{
     const val=k=>row.querySelector(`[data-k="${k}"]`)?.value??'';
@@ -27,7 +32,7 @@ function install(){
       const root=$('#modal-root');if(root)root.innerHTML='';
       if(window.reloadIriarte)await window.reloadIriarte();else location.reload();
     }catch(err){
-      if(errorBox)errorBox.innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c"><b>No se pudo guardar la factura.</b><br>${esc(err.message||err)}</div>`;
+      if(errorBox)errorBox.innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c"><b>No se pudo guardar la factura.</b><br>${esc(friendly(err))}</div>`;
       if(submit)submit.disabled=false;
     }
   };
