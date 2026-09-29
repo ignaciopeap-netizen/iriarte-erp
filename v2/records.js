@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 const $=s=>document.querySelector(s);
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[m]));
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
 const num=v=>Number(String(v??0).replace(',','.'))||0;
 const money=v=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(num(v));
 let timer;
@@ -22,15 +22,15 @@ function rows(){
  (d.presupuestos||[]).forEach(x=>add('Presupuesto',x,{party:clientName(x.cliente_id)||x.client||'',project:projectName(x.proyecto_id),concept:x.name||x.nombre||'',open:['budget',x.id]}));
  (d.facturas||[]).forEach(x=>add('Factura',x,{party:clientName(x.cliente_id),project:projectName(x.proyecto_id),open:['invoice',x.id]}));
  (d.compras||[]).forEach(x=>add('Compra',x,{party:supplierName(x.proveedor_id),project:projectName(x.proyecto_id),open:['purchase',x.id]}));
- (d.cobros||[]).forEach(x=>add('Cobro',x,{ref:x.factura_id||'',project:projectName(x.proyecto_id),concept:x.concepto||'Cobro',amount:x.importe}));
- (d.pagos||[]).forEach(x=>add('Pago',x,{ref:x.compra_id||'',project:projectName(x.proyecto_id),concept:x.concepto||'Pago',amount:x.importe}));
+ (d.cobros||[]).forEach(x=>{const f=byId(d.facturas,x.factura_id);add('Cobro',x,{ref:f?.numero||x.factura_id||'',clientId:f?.cliente_id??null,projectId:f?.proyecto_id??null,party:clientName(f?.cliente_id),project:projectName(f?.proyecto_id),concept:x.referencia?`Cobro · ${x.referencia}`:'Cobro',amount:x.importe,open:f?['invoice',f.id]:null})});
+ (d.pagos||[]).forEach(x=>{const c=byId(d.compras,x.compra_id);add('Pago',x,{ref:c?.numero_factura||c?.referencia||x.compra_id||'',supplierId:c?.proveedor_id??null,projectId:c?.proyecto_id??null,party:supplierName(c?.proveedor_id),project:projectName(c?.proyecto_id),concept:x.referencia?`Pago · ${x.referencia}`:'Pago',amount:x.importe,open:c?['purchase',c.id]:null})});
  (d.horas||[]).forEach(x=>add('Horas',x,{party:x.persona||'',project:projectName(x.proyecto_id),concept:x.concepto||x.notas||'',amount:num(x.horas)*num(x.coste_hora),open:['operational','horas_proyecto:'+x.id]}));
  (d.visitas||[]).forEach(x=>add('Visita',x,{project:projectName(x.project_id),concept:x.titulo||x.descripcion||'',status:x.estado_obra||'',open:['operational','obra_visitas:'+x.id]}));
  (d.tareas||[]).forEach(x=>add('Tarea',x,{date:x.fecha_limite||dateOf(x),project:projectName(x.project_id),concept:x.titulo||x.descripcion||'',open:['operational','obra_tareas:'+x.id]}));
  (d.incidencias||[]).forEach(x=>add('Incidencia',x,{project:projectName(x.project_id),concept:x.titulo||x.descripcion||'',open:['operational','obra_incidencias:'+x.id]}));
  (d.docs||[]).forEach(x=>add('Documento',x,{project:projectName(x.proyecto_id),concept:x.nombre||x.archivo_nombre||'',status:x.tipo||'',open:['document',x.id]}));
  (d.gastos||[]).forEach(x=>add('Gasto general',x,{party:supplierName(x.proveedor_id)||x.proveedor||'',project:projectName(x.proyecto_id),concept:x.concepto||x.categoria||'',open:['expense',x.id]}));
- (d.movs||[]).forEach(x=>add('Banco',x,{party:x.cliente_proveedor||'',project:projectName(x.proyecto_id),concept:x.concepto||x.concepto_banco||'',status:x.conciliado?'conciliado':'pendiente',amount:x.total??x.importe,open:[x.conciliado?'detail':'bank',x.id]}));
+ (d.movs||[]).forEach(x=>add('Banco',x,{party:x.cliente_proveedor||clientName(x.cliente_id)||supplierName(x.proveedor_id)||'',project:projectName(x.proyecto_id),concept:x.concepto||x.concepto_banco||'',status:x.conciliado?'conciliado':'pendiente',amount:x.total??x.importe,open:[x.conciliado?'detail':'bank',x.id]}));
  return out
 }
 function rawValue(r,field){if(field.startsWith('_'))return primitive(r[field.slice(1)]);return primitive(r.raw?.[field])}
