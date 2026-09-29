@@ -3,6 +3,7 @@
 'use strict';
 let timer;
 function project(id){return (window.APP?.data?.proyectos||[]).find(x=>String(x.id)===String(id))||null}
+function invoice(id){return (window.APP?.data?.facturas||[]).find(x=>String(x.id)===String(id))||null}
 function hidden(form,name,value,key){let x=form.querySelector(`input[type="hidden"][data-rel-hidden="${key}"]`);if(!x){x=document.createElement('input');x.type='hidden';x.name=name;x.dataset.relHidden=key;form.appendChild(x)}x.value=value||'';return x}
 function unlock(select,key,form){select.disabled=false;form.querySelector(`input[data-rel-hidden="${key}"]`)?.remove()}
 function lock(select,key,form,value){select.value=value||'';select.disabled=true;hidden(form,select.name,value,key)}
@@ -10,13 +11,14 @@ function lock(select,key,form,value){select.value=value||'';select.disabled=true
 function invoiceEditor(){
  const form=document.querySelector('#invoice-pro-form');if(!form||form.dataset.relReady==='1')return;form.dataset.relReady='1';
  const projectSel=form.elements.proyecto_id,clientSel=form.elements.cliente_id,stateSel=form.elements.estado;if(!projectSel||!clientSel)return;
- const initiallyLocked=String(stateSel?.value||'borrador').toLowerCase()!=='borrador';
+ const record=invoice(window.__iriarteEditingInvoiceId),state=String(record?.estado||stateSel?.value||'borrador').toLowerCase();
+ const contextLocked=!!record&&(!!record.presupuesto_id||state!=='borrador'||(window.APP?.data?.cobros||[]).some(c=>String(c.factura_id)===String(record.id)));
  const note=document.createElement('div');note.className='notice';note.style.marginTop='10px';note.dataset.relNote='invoice';form.querySelector('.form-grid')?.after(note);
  function sync(){
    const p=project(projectSel.value);
-   if(initiallyLocked){
-     lock(projectSel,'invoice-project',form,projectSel.value);lock(clientSel,'invoice-client',form,clientSel.value);
-     note.innerHTML='<b>Contexto financiero bloqueado.</b> Una factura ya emitida no puede cambiar de cliente o proyecto. El resto de campos editables se conserva.';return
+   if(contextLocked){
+     lock(projectSel,'invoice-project',form,record?.proyecto_id||projectSel.value);lock(clientSel,'invoice-client',form,record?.cliente_id||clientSel.value);
+     note.innerHTML=record?.presupuesto_id?'<b>Contexto heredado del presupuesto.</b> Esta factura conserva proyecto y cliente del presupuesto que la originó.':'<b>Contexto financiero bloqueado.</b> Una factura emitida o con cobros no puede cambiar de cliente o proyecto.';return
    }
    unlock(projectSel,'invoice-project',form);
    if(p){
