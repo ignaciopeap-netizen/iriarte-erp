@@ -1,0 +1,36 @@
+name: Export source bundle
+on:
+  push:
+    branches:
+      - export-unified-v2-2026-09-29
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Prepare source bundle
+        run: |
+          mkdir -p export
+          cp -R v2 export/v2
+          cp MIGRACION*.sql export/ 2>/dev/null || true
+          cp vercel.json export/ 2>/dev/null || true
+          cat > export/README_EXPORT.txt <<'EOF'
+          Iriarte ERP - copia de codigo
+          Rama origen: unified-v2
+          Commit origen: 505226a9f7edf7666fc87a25b1bd5e3607f963c2
+          Fecha exportacion: 2026-09-29
+
+          Contenido:
+          - v2/: codigo actual de la aplicacion V2
+          - MIGRACION*.sql: migraciones SQL versionadas en el repositorio
+          - vercel.json: configuracion de despliegue, si existe
+
+          Nota: la base de datos viva de Supabase y los datos no se incluyen en este ZIP.
+          EOF
+      - name: Upload source bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: iriarte-erp-unified-v2-source
+          path: export/
+          if-no-files-found: error
+          retention-days: 7
