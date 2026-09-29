@@ -46,12 +46,16 @@
     if(!items.length){const e=document.createElement('div');e.className='empty';e.textContent=emptyText||'No hay datos todavía.';panel.appendChild(e);return}
     items.slice(0,12).forEach(x=>{const b=document.createElement('button');b.type='button';b.className='master-item';b.style.cssText=itemStyle;b.dataset.projectRecord=`${type}:${x.id}`;b.innerHTML=render(x);panel.appendChild(b)})
   }
+  function setKpi(detail,label,value,cls=''){
+    for(const k of detail.querySelectorAll('.kpi')){const small=k.querySelector('small');if(small?.textContent.trim()!==label)continue;const strong=k.querySelector('strong');if(!strong)continue;strong.textContent=value;strong.classList.remove('positive','negative');if(cls)strong.classList.add(cls);break}
+  }
 
   function decorate(){
     clearTimeout(timer);timer=setTimeout(()=>{
       if(window.APP?.route!=='proyectos')return;
       const d=projectData(),detail=$('.card.detail');if(!d||!detail)return;
-      const signature=[d.p.id,d.budgets.length,d.allInvoices.length,d.allPurchases.length,d.docs.length].join(':');if(detail.dataset.projectEnhancement===signature)return;detail.dataset.projectEnhancement=signature;
+      const signature=[d.p.id,d.budgets.length,d.allInvoices.length,d.allPurchases.length,d.docs.length,d.baseInv,d.basePur,d.hourCost,d.margin].join(':');if(detail.dataset.projectEnhancement===signature)return;detail.dataset.projectEnhancement=signature;
+      setKpi(detail,'Facturado base',money(d.baseInv));setKpi(detail,'Compras base',money(d.basePur));setKpi(detail,'Coste horas',money(d.hourCost));setKpi(detail,'Margen directo',money(d.margin),d.margin<0?'negative':'positive');
       detail.querySelectorAll('.card.panel').forEach(panel=>{const title=panel.querySelector('h3')?.textContent.trim();if(title==='Presupuestos')replaceCorePanel(panel,d.budgets,'budget',x=>`<b>${esc(x.name||x.nombre||'Presupuesto')}</b><small>${esc(x.ref||x.numero||'')} · ${esc(x.status||x.estado||'')}</small>`,'Sin presupuestos vinculados.');else if(title==='Facturas')replaceCorePanel(panel,d.allInvoices,'invoice',x=>`<b>${esc(x.numero||'Borrador')}</b><small>${esc(x.fecha||'')} · ${money(x.total)} · ${esc(x.estado||'')}</small>`,'Sin facturas.');else if(title==='Compras')replaceCorePanel(panel,d.allPurchases,'purchase',x=>`<b>${esc(x.numero_factura||x.concepto||'Compra')}</b><small>${esc(x.fecha||'')} · ${money(x.total)} · ${esc(x.estado||'')}</small>`,'Sin compras.');else if(title==='Documentos')replaceCorePanel(panel,d.docs,'document',x=>`<b>${esc(x.nombre||x.archivo_nombre||'Documento')}</b><small>${esc(x.tipo||'')} · ${esc((x.fecha_documento||x.created_at||'').slice(0,10))}</small>`,'Sin documentos.')}});
       const flow=detail.querySelector('.flow');if(flow){const budget=flow.querySelector('[data-project-nav="presupuestos"]');if(budget)budget.textContent=d.budgets.length===1?'Presupuesto':'Presupuestos';const profit=flow.querySelector('[data-project-nav="finanzas"]');if(profit){profit.textContent='Rentabilidad';profit.title='Abrir rentabilidad detallada del proyecto'}}
     },70)
