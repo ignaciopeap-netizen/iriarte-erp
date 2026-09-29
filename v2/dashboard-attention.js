@@ -10,16 +10,32 @@ function activePurchase(x){return String(x?.estado||'').toLowerCase()!=='anulada
 function pendingInvoice(S,x){const paid=sum((S.data.cobros||[]).filter(c=>String(c.factura_id)===String(x.id)),c=>c.importe);return Math.max(0,n(x.total)-paid)}
 function pendingPurchase(S,x){const paid=sum((S.data.pagos||[]).filter(p=>String(p.compra_id)===String(x.id)),p=>p.importe);return Math.max(0,n(x.total)-paid)}
 function signedMovement(x){const amount=Math.abs(n(x.total??x.importe));return ['pago','gasto'].includes(String(x.tipo||'').toLowerCase())?-amount:amount}
-function patchBankKpi(S,view){
- const card=[...view.querySelectorAll('.card.kpi')].find(x=>x.querySelector('small')?.textContent?.trim()==='Tesorería');if(!card)return;
- const balance=sum(S.data.movs||[],signedMovement),label=card.querySelector('small'),value=card.querySelector('strong');
- if(label)label.textContent='Saldo de movimientos';
- if(value){value.textContent=eur(balance);value.classList.remove('positive','negative');value.classList.add(balance<0?'negative':'positive')}
- card.title='Saldo neto del libro de movimientos financieros. Coincide con el criterio mostrado en Banco.';
+function setKpi(view,label,value,number){
+ const card=[...view.querySelectorAll('.card.kpi')].find(x=>x.querySelector('small')?.textContent?.trim()===label);if(!card)return;
+ const strong=card.querySelector('strong');if(!strong)return;strong.textContent=value;
+ if(typeof number==='number'){strong.classList.remove('positive','negative');strong.classList.add(number<0?'negative':'positive')}
+}
+function setInfo(view,label,value,number){
+ const item=[...view.querySelectorAll('.info')].find(x=>x.querySelector('small')?.textContent?.trim()===label);if(!item)return;
+ const b=item.querySelector('b');if(!b)return;b.textContent=value;
+ if(typeof number==='number'){b.classList.remove('positive','negative');b.classList.add(number<0?'negative':'positive')}
+}
+function patchFinancialKpis(S,view){
+ const invoices=(S.data.facturas||[]).filter(issuedInvoice),purchases=(S.data.compras||[]).filter(activePurchase);
+ const facturado=sum(invoices,x=>x.base),compras=sum(purchases,x=>x.base),horas=sum(S.data.horas||[],x=>n(x.horas)*n(x.coste_hora)),margen=facturado-compras-horas,gastos=sum(S.data.gastos||[],x=>x.base),resultado=margen-gastos;
+ const bankBalance=sum(S.data.movs||[],signedMovement);
+ setKpi(view,'Facturado base',eur(facturado));
+ setKpi(view,'Compras base',eur(compras));
+ setKpi(view,'Margen directo',eur(margen),margen);
+ const treasury=[...view.querySelectorAll('.card.kpi')].find(x=>x.querySelector('small')?.textContent?.trim()==='Tesorería'||x.querySelector('small')?.textContent?.trim()==='Saldo de movimientos');
+ if(treasury){const label=treasury.querySelector('small'),value=treasury.querySelector('strong');if(label)label.textContent='Saldo de movimientos';if(value){value.textContent=eur(bankBalance);value.classList.remove('positive','negative');value.classList.add(bankBalance<0?'negative':'positive')}treasury.title='Saldo neto del libro de movimientos financieros. Coincide con el criterio mostrado en Banco.'}
+ setInfo(view,'Margen directo',eur(margen),margen);
+ setInfo(view,'Gastos generales',eur(gastos));
+ setInfo(view,'Resultado',eur(resultado),resultado);
 }
 function render(){
  const S=window.APP,view=document.querySelector('#app-view');if(!S||S.route!=='inicio'||!view)return;
- patchBankKpi(S,view);
+ patchFinancialKpis(S,view);
  if(view.querySelector('.ux-attention'))return;
  const invoices=(S.data.facturas||[]).filter(issuedInvoice),purchases=(S.data.compras||[]).filter(activePurchase);
  const collect=sum(invoices,x=>pendingInvoice(S,x)),pay=sum(purchases,x=>pendingPurchase(S,x));
