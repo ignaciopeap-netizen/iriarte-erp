@@ -50,6 +50,9 @@ function open(id){
  }catch(err){$('#rs-error').innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c"><b>No se pudo conciliar.</b><br>${esc(err.message||err)}</div>`;submit.disabled=false}};
 }
 window.iriarteReconcileMovement=open;
+// workflow-plus.js se carga después y conserva un conciliador legacy. Reafirmamos este punto de entrada
+// al terminar la carga síncrona para que también Registros use siempre la operación atómica.
+setTimeout(()=>{window.iriarteReconcileMovement=open},0);
 // Se carga antes que workflow-plus.js. La escucha en captura evita que el conciliador antiguo procese el mismo clic.
 document.addEventListener('click',e=>{const b=e.target.closest('[data-wf-reconcile]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();open(b.dataset.wfReconcile)},true);
 })();
