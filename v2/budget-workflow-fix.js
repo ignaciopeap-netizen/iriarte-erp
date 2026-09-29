@@ -16,13 +16,18 @@
     if((p.kind||'obra')==='honorarios')return (p.fee_lines||[]).reduce((a,x)=>a+num(x.amount??x.importe),0);
     return (p.items||[]).reduce((a,x)=>a+num(x.qty??x.cantidad)*num(x.price??x.precio),0);
   }
+  function budgetVat(p){
+    if((p.kind||'obra')==='honorarios')return (p.fee_lines||[]).reduce((a,x)=>a+num(x.amount??x.importe)*num(x.vat??x.ivaPct??21)/100,0);
+    return (p.items||[]).reduce((a,x)=>a+num(x.qty??x.cantidad)*num(x.price??x.precio)*num(x.vat??x.ivaPct??21)/100,0);
+  }
+  function budgetIrpf(p){return p.irpf_enabled?budgetBase(p)*num(p.irpf_pct||15)/100:0}
   function dateValue(p){const d=p.date||p.fecha;return /^\d{4}-\d{2}-\d{2}$/.test(String(d||''))?String(d):today()}
   function fullInvoicesForBudget(id){return (window.APP?.data?.facturas||[]).filter(x=>String(x.presupuesto_id||'')===String(id)&&!x.presupuesto_fase_id&&String(x.estado||'').toLowerCase()!=='anulada')}
   function openInvoice(id,projectId){if(projectId)window.APP.sel.project=projectId;localStorage.setItem('iriarte_open_invoice',id);if(window.iriarteRoute)window.iriarteRoute('facturas');else location.hash='#facturas'}
 
   async function syncCurrentBudget(p){
     const client=db();if(!client)throw new Error('La conexión todavía no está preparada.');
-    const date=dateValue(p),name=p.name||p.nombre||'Presupuesto',ref=p.ref||p.numero||null;
+    const date=dateValue(p),name=p.name||p.nombre||'Presupuesto',ref=p.ref||p.numero||null,base=budgetBase(p),vat=budgetVat(p),irpf=budgetIrpf(p),total=base+vat-irpf;
     const payload={
       nombre:name,name,cliente_id:p.cliente_id||null,proyecto_id:p.proyecto_id||null,
       fecha:date,date,numero:ref,ref,client:p.client||null,address:p.address||null,
@@ -30,7 +35,7 @@
       irpf_pct:p.irpf_enabled?num(p.irpf_pct||15):0,items:p.items||[],status:p.status||'Borrador',
       archived:!!p.archived,intro_text:p.intro_text||'',zonas:p.zonas||[],scope_items:p.scope_items||[],
       redaccion_toggle:p.redaccion_toggle!==false,redaccion_texto:p.redaccion_texto||'',fases_obra:p.fases_obra||[],
-      direccion_resumen:p.direccion_resumen||'',fee_lines:p.fee_lines||[],clausulas:p.clausulas||[]
+      direccion_resumen:p.direccion_resumen||'',fee_lines:p.fee_lines||[],clausulas:p.clausulas||[],base,total
     };
     const {data,error}=await client.from('presupuestos').update(payload).eq('id',p.id).select('*').single();if(error)throw error;
     Object.assign(p,data);return p;
