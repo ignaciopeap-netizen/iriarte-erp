@@ -6,6 +6,7 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
   const money=v=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(Number(v||0));
   const num=v=>Number(v||0);
+  const today=()=>new Date().toISOString().slice(0,10);
   let timer=false;
 
   function projectId(){
@@ -14,10 +15,17 @@
     return S.data?.proyectos?.[0]?.id||'';
   }
   function projectSelect(pid){const rows=window.APP?.data?.proyectos||[];return `<select class="btn" data-op-project><option value="" ${!pid?'selected':''}>Todos los proyectos</option>${rows.map(p=>`<option value="${esc(p.id)}" ${String(p.id)===String(pid)?'selected':''}>${esc(p.nombre)}</option>`).join('')}</select>`}
+  function projectOptions(pid){return (window.APP?.data?.proyectos||[]).map(p=>`<option value="${esc(p.id)}" ${String(p.id)===String(pid)?'selected':''}>${esc(p.nombre)}</option>`).join('')}
   function pName(id){return (window.APP?.data?.proyectos||[]).find(p=>String(p.id)===String(id))?.nombre||'—'}
   function badge(s){const val=String(s||'—');const c=/complet|resuelt|cerrad/i.test(val)?'good':/cancel/i.test(val)?'bad':'warn';return `<span class="badge ${c}">${esc(val.replaceAll('_',' '))}</span>`}
   function empty(t='No hay registros.'){return `<div class="empty">${esc(t)}</div>`}
   function btn(t,a,cls=''){return `<button class="btn ${cls}" data-action="${a}">${esc(t)}</button>`}
+  function formModal(title,body,onSave){
+    const root=$('#modal-root');root.innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><h2>${esc(title)}</h2><div class="grow"></div><button class="btn" type="button" data-op-close>Cerrar</button></div><form id="op-create-form"><div class="modal-body">${body}<div id="op-create-error"></div></div><div class="modal-foot"><button class="btn" type="button" data-op-close>Cancelar</button><button class="btn primary" type="submit">Guardar</button></div></form></div></div>`;
+    const close=()=>root.innerHTML='';root.querySelectorAll('[data-op-close]').forEach(b=>b.onclick=close);$('#op-create-form').onsubmit=async e=>{e.preventDefault();e.submitter.disabled=true;try{await onSave(Object.fromEntries(new FormData(e.currentTarget).entries()));close();if(window.reloadIriarte)await window.reloadIriarte();else location.reload()}catch(err){$('#op-create-error').innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c">${esc(err.message||err)}</div>`;e.submitter.disabled=false}}
+  }
+  function newVisit(){const pid=projectId();if(!pid)return alert('Selecciona un proyecto antes de crear una visita.');formModal('Nueva visita de obra',`<div class="form-grid"><label>Proyecto<select name="project_id" required>${projectOptions(pid)}</select></label><label>Fecha<input name="fecha" type="date" value="${today()}" required></label><label class="full">Título<input name="titulo" value="Visita de obra"></label><label class="full">Descripción<textarea name="descripcion"></textarea></label><label class="full">Observaciones<textarea name="observaciones"></textarea></label></div>`,async f=>{const {error}=await db.from('obra_visitas').insert({project_id:f.project_id,fecha:f.fecha,titulo:f.titulo||'Visita de obra',descripcion:f.descripcion||null,observaciones:f.observaciones||null});if(error)throw error})}
+  function newIncident(){const pid=projectId();if(!pid)return alert('Selecciona un proyecto antes de crear una incidencia.');formModal('Nueva incidencia',`<div class="form-grid"><label>Proyecto<select name="project_id" required>${projectOptions(pid)}</select></label><label>Prioridad<select name="prioridad"><option>baja</option><option selected>normal</option><option>alta</option><option>urgente</option></select></label><label>Tipo<input name="tipo"></label><label class="full">Título<input name="titulo" required></label><label class="full">Descripción<textarea name="descripcion"></textarea></label></div>`,async f=>{const {error}=await db.from('obra_incidencias').insert({project_id:f.project_id,titulo:f.titulo,descripcion:f.descripcion||null,tipo:f.tipo||null,prioridad:f.prioridad||'normal',estado:'abierta'});if(error)throw error})}
 
   function renderObra(){
     const S=window.APP,pid=projectId();if(!S)return;
@@ -60,5 +68,5 @@
   function enhance(){clearTimeout(timer);timer=setTimeout(()=>{const route=window.APP?.route;if(!['obra','horas','documentos'].includes(route))return;if($('#op-workspace'))return;if(route==='obra')renderObra();else if(route==='horas')renderHours();else renderDocs()},80)}
   new MutationObserver(enhance).observe(document.body,{childList:true,subtree:true});window.addEventListener('hashchange',enhance);window.addEventListener('load',enhance);
   document.addEventListener('change',e=>{if(e.target.matches('[data-op-project]')){window.APP.sel.project=e.target.value;const route=window.APP.route;if(route==='obra')renderObra();else if(route==='horas')renderHours();else if(route==='documentos')renderDocs()}},true);
-  document.addEventListener('click',e=>{const b=e.target.closest('[data-op-delete],[data-op-doc-open],[data-op-task-complete],[data-op-incident-resolve]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();if(b.dataset.opDelete){const [table,id]=b.dataset.opDelete.split(':');remove(table,id)}else if(b.dataset.opDocOpen)openDoc(b.dataset.opDocOpen);else if(b.dataset.opTaskComplete)completeTask(b.dataset.opTaskComplete);else if(b.dataset.opIncidentResolve)resolveIncident(b.dataset.opIncidentResolve)},true);
+  document.addEventListener('click',e=>{const create=e.target.closest('[data-action="new-visit"],[data-action="new-incident"]');if(create&&window.APP?.route==='obra'&&$('#op-workspace')){e.preventDefault();e.stopImmediatePropagation();if(create.dataset.action==='new-visit')newVisit();else newIncident();return}const b=e.target.closest('[data-op-delete],[data-op-doc-open],[data-op-task-complete],[data-op-incident-resolve]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();if(b.dataset.opDelete){const [table,id]=b.dataset.opDelete.split(':');remove(table,id)}else if(b.dataset.opDocOpen)openDoc(b.dataset.opDocOpen);else if(b.dataset.opTaskComplete)completeTask(b.dataset.opTaskComplete);else if(b.dataset.opIncidentResolve)resolveIncident(b.dataset.opIncidentResolve)},true);
 })();
