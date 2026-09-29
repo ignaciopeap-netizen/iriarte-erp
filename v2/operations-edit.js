@@ -18,4 +18,5 @@ function edit(table,id){const x=get(table,id);if(!x)return;
 function decorate(){clearTimeout(timer);timer=setTimeout(()=>{if(!['obra','horas','documentos'].includes(window.APP?.route))return;document.querySelectorAll('[data-op-delete]').forEach(del=>{if(del.parentElement.querySelector('[data-op-edit]'))return;const [table,id]=del.dataset.opDelete.split(':');const b=document.createElement('button');b.className='btn';b.textContent='Editar';b.dataset.opEdit=table+':'+id;del.parentElement.insertBefore(b,del)})},80)}
 new MutationObserver(decorate).observe(document.body,{childList:true,subtree:true});window.addEventListener('hashchange',decorate);window.addEventListener('load',decorate);
 document.addEventListener('click',e=>{const b=e.target.closest('[data-op-edit]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();const [table,id]=b.dataset.opEdit.split(':');edit(table,id)},true);
+window.iriarteEditOperationalRecord=edit;
 })();
