@@ -29,4 +29,5 @@ function enhanceExpenses(){if($('#wf-expense-panel'))return;const view=$('#app-v
 function enhance(){clearTimeout(timer);timer=setTimeout(()=>{const r=window.APP?.route;if(r==='facturas')enhanceInvoices();else if(r==='compras')enhancePurchases();else if(r==='finanzas')enhanceFinance();else if(r==='gastos')enhanceExpenses()},80)}
 new MutationObserver(enhance).observe(document.body,{childList:true,subtree:true});window.addEventListener('hashchange',enhance);window.addEventListener('load',enhance);
 document.addEventListener('click',e=>{const b=e.target.closest('[data-wf-collect],[data-wf-pay],[data-wf-reconcile],[data-wf-expense]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();if(b.dataset.wfCollect)collect(b.dataset.wfCollect);else if(b.dataset.wfPay)pay(b.dataset.wfPay);else if(b.dataset.wfReconcile)reconcile(b.dataset.wfReconcile);else if(b.dataset.wfExpense)editExpense(b.dataset.wfExpense)},true);
+window.iriarteReconcileMovement=reconcile;window.iriarteEditExpense=editExpense;
 })();
