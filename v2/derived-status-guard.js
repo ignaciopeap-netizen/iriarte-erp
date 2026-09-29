@@ -3,13 +3,19 @@
 'use strict';
 let timer;
 function option(value,label=value,selected=false){const o=document.createElement('option');o.value=value;o.textContent=label;o.selected=selected;return o}
-function note(select,text){const label=select.closest('label');if(!label||label.querySelector('[data-derived-state-note]'))return;const n=document.createElement('small');n.dataset.derivedStateNote='1';n.style.cssText='display:block;margin-top:5px;color:var(--muted);line-height:1.35';n.textContent=text;label.appendChild(n)}
+function note(select,text){const label=select.closest('label');if(!label)return;let n=label.querySelector('[data-derived-state-note]');if(!n){n=document.createElement('small');n.dataset.derivedStateNote='1';n.style.cssText='display:block;margin-top:5px;color:var(--muted);line-height:1.35';label.appendChild(n)}n.textContent=text}
 function invoice(){
  const form=document.querySelector('#invoice-pro-form');if(!form||form.dataset.stateGuard==='1')return;form.dataset.stateGuard='1';
- const s=form.elements.estado;if(!s)return;const current=s.value;
+ const s=form.elements.estado;if(!s)return;const current=s.value,fid=window.__iriarteEditingInvoiceId||null;
+ const hasCollections=!!fid&&(window.APP?.data?.cobros||[]).some(x=>String(x.factura_id)===String(fid));
  s.innerHTML='';
+ if(hasCollections){
+   s.appendChild(option(current,current.replaceAll('_',' '),true));
+   note(s,'Esta factura tiene cobros registrados. Su estado de cobro se calcula automáticamente y no puede anularse mientras esos cobros sigan vinculados.');
+   return;
+ }
  if(['parcialmente_cobrada','cobrada'].includes(current)){
-   s.append(option(current,current.replaceAll('_',' '),true),option('anulada','anulada'));
+   s.appendChild(option(current,current.replaceAll('_',' '),true));
  }else{
    ['borrador','emitida','vencida','anulada'].forEach(v=>s.appendChild(option(v,v,v===current)));
  }
