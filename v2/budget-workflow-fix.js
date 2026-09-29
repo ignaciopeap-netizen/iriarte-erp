@@ -23,6 +23,7 @@
   function budgetIrpf(p){return p.irpf_enabled?budgetBase(p)*num(p.irpf_pct||15)/100:0}
   function dateValue(p){const d=p.date||p.fecha;return /^\d{4}-\d{2}-\d{2}$/.test(String(d||''))?String(d):today()}
   function fullInvoicesForBudget(id){return (window.APP?.data?.facturas||[]).filter(x=>String(x.presupuesto_id||'')===String(id)&&!x.presupuesto_fase_id&&String(x.estado||'').toLowerCase()!=='anulada')}
+  function phaseInvoicesForBudget(id){return (window.APP?.data?.facturas||[]).filter(x=>String(x.presupuesto_id||'')===String(id)&&!!x.presupuesto_fase_id&&String(x.estado||'').toLowerCase()!=='anulada')}
   function openInvoice(id,projectId){if(projectId)window.APP.sel.project=projectId;localStorage.setItem('iriarte_open_invoice',id);if(window.iriarteRoute)window.iriarteRoute('facturas');else location.hash='#facturas'}
 
   async function syncCurrentBudget(p){
@@ -84,6 +85,12 @@
 
   async function createInvoice(){
     const p=currentBudget(),client=db();if(!p||!client)return;
+    const phaseInvoices=phaseInvoicesForBudget(p.id);
+    if(phaseInvoices.length){
+      alert(`Este presupuesto ya está usando facturación por fases (${phaseInvoices.length} factura${phaseInvoices.length===1?'':'s'} activa${phaseInvoices.length===1?'':'s'}). Para evitar duplicar importes, continúa facturando desde las fases del proyecto.`);
+      if(p.proyecto_id){window.APP.sel.project=p.proyecto_id;if(window.iriarteRoute)window.iriarteRoute('proyectos')}
+      return;
+    }
     const existing=fullInvoicesForBudget(p.id);
     if(existing.length){
       const x=[...existing].sort((a,b)=>String(b.created_at||b.fecha||'').localeCompare(String(a.created_at||a.fecha||'')))[0];
@@ -105,7 +112,7 @@
     }catch(err){alert('No se pudo crear la factura desde el presupuesto:\n'+(err.message||err))}
   }
 
-  function decorate(){clearTimeout(timer);timer=setTimeout(()=>{if(window.APP?.route!=='presupuestos'||window.APP?.budgetView!=='edit')return;const p=currentBudget(),b=document.querySelector('[data-action="budget-to-project"]');if(b&&p){if(p.proyecto_id)b.style.display='none';else{b.style.display='';b.textContent='Vincular a proyecto'}}const invoice=document.querySelector('[data-action="budget-to-invoice"]');if(invoice&&p){const existing=fullInvoicesForBudget(p.id);invoice.textContent=existing.length?'Abrir factura':'Crear factura';invoice.title=existing.length?'Este presupuesto ya tiene una factura completa vinculada.':''}},50)}
+  function decorate(){clearTimeout(timer);timer=setTimeout(()=>{if(window.APP?.route!=='presupuestos'||window.APP?.budgetView!=='edit')return;const p=currentBudget(),b=document.querySelector('[data-action="budget-to-project"]');if(b&&p){if(p.proyecto_id)b.style.display='none';else{b.style.display='';b.textContent='Vincular a proyecto'}}const invoice=document.querySelector('[data-action="budget-to-invoice"]');if(invoice&&p){const existing=fullInvoicesForBudget(p.id),phases=phaseInvoicesForBudget(p.id);invoice.disabled=false;if(existing.length){invoice.textContent='Abrir factura';invoice.title='Este presupuesto ya tiene una factura completa vinculada.'}else if(phases.length){invoice.textContent='Facturación por fases';invoice.title='Este presupuesto ya tiene facturas de fases. Continúa desde la ficha del proyecto.';invoice.disabled=true}else{invoice.textContent='Crear factura';invoice.title=''}}},50)}
   new MutationObserver(decorate).observe(document.body,{childList:true,subtree:true});window.addEventListener('hashchange',decorate);window.addEventListener('load',decorate);
   document.addEventListener('click',e=>{
     const b=e.target.closest('[data-action]');if(!b)return;
