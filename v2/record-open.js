@@ -12,9 +12,12 @@ function storedLocation(raw){
 async function openDocument(id){
  const client=db(),doc=(window.APP?.data?.docs||[]).find(x=>String(x.id)===String(id));if(!client||!doc)return;
  const loc=storedLocation(doc.archivo_ruta);if(!loc?.path){alert('Este documento no tiene un archivo almacenado.');return}
+ const tab=window.open('about:blank','_blank');
+ if(tab){try{tab.opener=null;tab.document.title='Abriendo documento…';tab.document.body.innerHTML='<p style="font-family:Arial,sans-serif;padding:24px">Abriendo documento privado…</p>'}catch(_){}}
  const {data,error}=await client.storage.from(loc.bucket).createSignedUrl(loc.path,120);
- if(error){alert('No se pudo abrir el documento:\n'+error.message);return}
- const w=window.open(data.signedUrl,'_blank','noopener');if(!w)alert('El navegador ha bloqueado la nueva pestaña. Permite ventanas emergentes para abrir el documento.');
+ if(error){try{tab?.close()}catch(_){}alert('No se pudo abrir el documento:\n'+error.message);return}
+ if(tab){tab.location.replace(data.signedUrl);return}
+ alert('El navegador ha bloqueado la nueva pestaña. Permite ventanas emergentes para abrir el documento.');
 }
 function open(type,id){
  if(!id)return;
