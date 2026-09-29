@@ -2,7 +2,7 @@
 'use strict';
 const $=s=>document.querySelector(s);
 const labels={inicio:'Inicio',clientes:'Clientes',proyectos:'Proyectos',presupuestos:'Presupuestos',facturas:'Facturas',proveedores:'Proveedores',compras:'Compras',obra:'Obra',horas:'Horas',documentos:'Documentos',finanzas:'Banco',gastos:'Gastos generales',informes:'Finanzas'};
-const routes=new Set(['presupuestos','facturas','compras','obra','horas','documentos','finanzas']);
+const routes=new Set(['presupuestos','facturas','compras','obra','horas','documentos']);
 let timer;
 function clean(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function applyBrand(){
