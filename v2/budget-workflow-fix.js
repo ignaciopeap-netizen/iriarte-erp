@@ -1,9 +1,12 @@
-// Iriarte ERP V2 · flujo fiable Presupuesto -> Proyecto -> Factura
+// Iriarte ERP V2 · flujo fiable Proyecto -> Presupuesto -> Factura
 (function(){
   'use strict';
   const db=()=>window.__iriarteDb;
+  const $=s=>document.querySelector(s);
+  const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
   const num=v=>Number(String(v??0).replace(',','.'))||0;
   const today=()=>new Date().toISOString().slice(0,10);
+  let timer;
 
   function currentBudget(){
     const S=window.APP;
@@ -50,6 +53,16 @@
     p.proyecto_id=data.id;p.estado='aceptado';p.status='proyecto';p.phase='Aceptado';return data.id;
   }
 
+  function openNewBudget(){
+    const S=window.APP,D=S?.data||{},projects=D.proyectos||[];if(!projects.length){alert('Primero crea un proyecto. Los presupuestos nuevos se vinculan desde el principio a un proyecto y a su cliente.');return}
+    const selected=S.sel.project&&projects.some(x=>String(x.id)===String(S.sel.project))?S.sel.project:projects[0].id;
+    const root=$('#modal-root');
+    root.innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><h2>Nuevo presupuesto</h2><div class="grow"></div><button class="btn" type="button" data-bwf-close>Cerrar</button></div><form id="bwf-new-form"><div class="modal-body"><div class="form-grid"><label class="full">Proyecto<select name="proyecto_id" id="bwf-project" required>${projects.map(p=>`<option value="${esc(p.id)}" ${String(p.id)===String(selected)?'selected':''}>${esc(p.nombre)}</option>`).join('')}</select></label><label>Cliente<input id="bwf-client" disabled></label><label>Fecha<input name="fecha" type="date" value="${today()}" required></label><label class="full">Nombre<input name="nombre" id="bwf-name" required></label></div><div class="notice"><b>El cliente se toma del proyecto seleccionado.</b> Así evitamos que un presupuesto pueda quedar asociado a un cliente distinto del proyecto.</div><div id="bwf-error"></div></div><div class="modal-foot"><button class="btn" type="button" data-bwf-close>Cancelar</button><button class="btn primary" type="submit">Crear presupuesto</button></div></form></div></div>`;
+    const close=()=>root.innerHTML='';root.querySelectorAll('[data-bwf-close]').forEach(b=>b.onclick=close);
+    const refresh=()=>{const p=projects.find(x=>String(x.id)===String($('#bwf-project').value)),c=(D.clientes||[]).find(x=>String(x.id)===String(p?.cliente_id));$('#bwf-client').value=c?.nombre||'Sin cliente asignado';if(!$('#bwf-name').value)$('#bwf-name').value=p?.nombre||'Nuevo presupuesto'};refresh();$('#bwf-project').onchange=()=>{$('#bwf-name').value='';refresh()};
+    $('#bwf-new-form').onsubmit=async e=>{e.preventDefault();const submit=e.submitter;submit.disabled=true;try{const f=Object.fromEntries(new FormData(e.currentTarget).entries()),p=projects.find(x=>String(x.id)===String(f.proyecto_id)),c=(D.clientes||[]).find(x=>String(x.id)===String(p?.cliente_id));if(!p)throw new Error('Selecciona un proyecto.');if(!c)throw new Error('El proyecto seleccionado no tiene cliente asignado.');const count=(D.presupuestos||[]).filter(x=>String(x.proyecto_id||'')===String(p.id)).length+1,ref=p.codigo?`${p.codigo}-Pres.${count}`:null,row={nombre:f.nombre||p.nombre,name:f.nombre||p.nombre,kind:S.budgetKind||'obra',cliente_id:c.id,proyecto_id:p.id,fecha:f.fecha,date:f.fecha,numero:ref,ref,client:c.nombre,address:p.direccion||c.direccion||'',estado:'borrador',status:'Borrador',phase:'Borrador',items:[],fee_lines:[],irpf_enabled:false,irpf_pct:15,base:0,total:0};const {data,error}=await db().from('presupuestos').insert(row).select('id').single();if(error)throw error;S.sel.project=p.id;S.sel.budget=data.id;S.budgetView='edit';close();if(window.reloadIriarte)await window.reloadIriarte();else location.reload()}catch(err){$('#bwf-error').innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c">${esc(err.message||err)}</div>`;submit.disabled=false}}
+  }
+
   async function convert(){
     const p=currentBudget();if(!p)return;
     try{
@@ -59,7 +72,7 @@
       window.APP.sel.project=pid;localStorage.setItem('iriarte_open_project',pid);
       if(!existed)alert('Proyecto creado y vinculado al presupuesto.');
       location.hash='#proyectos';location.reload();
-    }catch(err){alert('No se pudo convertir el presupuesto en proyecto:\n'+(err.message||err))}
+    }catch(err){alert('No se pudo vincular el presupuesto con el proyecto:\n'+(err.message||err))}
   }
 
   async function createInvoice(){
@@ -73,9 +86,12 @@
     }catch(err){alert('No se pudo crear la factura desde el presupuesto:\n'+(err.message||err))}
   }
 
+  function decorate(){clearTimeout(timer);timer=setTimeout(()=>{if(window.APP?.route!=='presupuestos'||window.APP?.budgetView!=='edit')return;const p=currentBudget(),b=document.querySelector('[data-action="budget-to-project"]');if(!b||!p)return;if(p.proyecto_id)b.style.display='none';else{b.style.display='';b.textContent='Vincular a proyecto'}},50)}
+  new MutationObserver(decorate).observe(document.body,{childList:true,subtree:true});window.addEventListener('hashchange',decorate);window.addEventListener('load',decorate);
   document.addEventListener('click',e=>{
     const b=e.target.closest('[data-action]');if(!b)return;
-    if(b.dataset.action==='budget-to-project'){e.preventDefault();e.stopImmediatePropagation();convert()}
+    if(b.dataset.action==='new-budget'){e.preventDefault();e.stopImmediatePropagation();openNewBudget()}
+    else if(b.dataset.action==='budget-to-project'){e.preventDefault();e.stopImmediatePropagation();convert()}
     else if(b.dataset.action==='budget-to-invoice'){e.preventDefault();e.stopImmediatePropagation();createInvoice()}
   },true);
 })();
