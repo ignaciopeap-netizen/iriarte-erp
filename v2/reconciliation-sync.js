@@ -3,7 +3,7 @@
 'use strict';
 const $=s=>document.querySelector(s);
 const db=()=>window.__iriarteDb;
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[m]));
 const money=v=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(Number(v||0));
 const issuedInvoice=x=>!['borrador','anulada'].includes(String(x?.estado||'borrador').toLowerCase());
 function options(rows,value,label){return '<option value="">—</option>'+(rows||[]).map(x=>`<option value="${esc(x.id)}" ${String(x.id)===String(value)?'selected':''}>${esc(label(x))}</option>`).join('')}
@@ -37,18 +37,19 @@ function open(id){
  const close=()=>root.innerHTML='';root.querySelectorAll('[data-rs-close]').forEach(b=>b.onclick=close);
  const form=$('#rs-form');
  const factura=form.elements.factura_id,compra=form.elements.compra_id,project=form.elements.proyecto_id,clientSel=form.elements.cliente_id,supplierSel=form.elements.proveedor_id;
- if(factura)factura.onchange=()=>{const f=(D.facturas||[]).find(x=>String(x.id)===String(factura.value));if(!f)return;if(f.proyecto_id)project.value=f.proyecto_id;if(f.cliente_id)clientSel.value=f.cliente_id};
- if(compra)compra.onchange=()=>{const c=(D.compras||[]).find(x=>String(x.id)===String(compra.value));if(!c)return;if(c.proyecto_id)project.value=c.proyecto_id;if(c.proveedor_id)supplierSel.value=c.proveedor_id};
+ if(factura)factura.onchange=()=>{const f=(D.facturas||[]).find(x=>String(x.id)===String(factura.value));if(!f)return;project.value=f.proyecto_id||'';clientSel.value=f.cliente_id||'';supplierSel.value=''};
+ if(compra)compra.onchange=()=>{const c=(D.compras||[]).find(x=>String(x.id)===String(compra.value));if(!c)return;project.value=c.proyecto_id||'';supplierSel.value=c.proveedor_id||'';clientSel.value=''};
  form.onsubmit=async e=>{e.preventDefault();const submit=e.submitter;submit.disabled=true;try{
    const f=Object.fromEntries(new FormData(form).entries());
-   if(isCollection&&f.factura_id){const target=invoices.find(x=>String(x.id)===String(f.factura_id));if(!target)throw new Error('La factura seleccionada no está disponible para cobro.');const pending=invoicePending(target);if(movementAmount>pending+0.009)throw new Error(`El movimiento (${money(movementAmount)}) supera el saldo pendiente de la factura (${money(pending)}). Divide o revisa la conciliación antes de continuar.`)}
-   if(isPayment&&f.compra_id){const target=purchases.find(x=>String(x.id)===String(f.compra_id));if(!target)throw new Error('La compra seleccionada no está disponible para pago.');const pending=purchasePending(target);if(movementAmount>pending+0.009)throw new Error(`El movimiento (${money(movementAmount)}) supera el saldo pendiente de la compra (${money(pending)}). Divide o revisa la conciliación antes de continuar.`)}
+   if(isCollection&&f.factura_id){const target=invoices.find(x=>String(x.id)===String(f.factura_id));if(!target)throw new Error('La factura seleccionada no está disponible para cobro.');const pending=invoicePending(target);if(movementAmount>pending+0.009)throw new Error(`El movimiento (${money(movementAmount)}) supera el saldo pendiente de la factura (${money(pending)}). Divide o revisa la conciliación antes de continuar.`);f.proyecto_id=target.proyecto_id||'';f.cliente_id=target.cliente_id||'';f.proveedor_id=''}
+   if(isPayment&&f.compra_id){const target=purchases.find(x=>String(x.id)===String(f.compra_id));if(!target)throw new Error('La compra seleccionada no está disponible para pago.');const pending=purchasePending(target);if(movementAmount>pending+0.009)throw new Error(`El movimiento (${money(movementAmount)}) supera el saldo pendiente de la compra (${money(pending)}). Divide o revisa la conciliación antes de continuar.`);f.proyecto_id=target.proyecto_id||'';f.proveedor_id=target.proveedor_id||'';f.cliente_id=''}
    if(isCollection&&!f.factura_id&&!confirm('No has vinculado ninguna factura. Se marcará el movimiento como conciliado, pero no se registrará un cobro. ¿Continuar?')){submit.disabled=false;return}
    if(isPayment&&!f.compra_id&&!confirm('No has vinculado ninguna compra. Se marcará el movimiento como conciliado, pero no se registrará un pago. ¿Continuar?')){submit.disabled=false;return}
    const {error}=await client.rpc('conciliar_movimiento_v2',{p_movimiento_id:id,p_proyecto_id:f.proyecto_id||null,p_cliente_id:f.cliente_id||null,p_proveedor_id:f.proveedor_id||null,p_factura_id:f.factura_id||null,p_compra_id:f.compra_id||null,p_categoria:f.categoria||null,p_subcategoria:f.subcategoria||null,p_notas:f.notas||null});if(error)throw error;
    close();if(window.reloadIriarte)await window.reloadIriarte();else location.reload();
  }catch(err){$('#rs-error').innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c"><b>No se pudo conciliar.</b><br>${esc(err.message||err)}</div>`;submit.disabled=false}};
 }
+window.iriarteReconcileMovement=open;
 // Se carga antes que workflow-plus.js. La escucha en captura evita que el conciliador antiguo procese el mismo clic.
 document.addEventListener('click',e=>{const b=e.target.closest('[data-wf-reconcile]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();open(b.dataset.wfReconcile)},true);
 })();
