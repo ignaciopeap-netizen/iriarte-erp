@@ -2,7 +2,7 @@
 (function(){
 'use strict';
 const $=s=>document.querySelector(s);
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[m]));
 const num=v=>Number(String(v??0).replace(',','.'))||0;
 const money=v=>new Intl.NumberFormat('es-ES',{style:'currency',currency:'EUR'}).format(num(v));
 let timer;
@@ -44,7 +44,7 @@ function open(r){
 }
 function styles(){if($('#records-styles'))return;const s=document.createElement('style');s.id='records-styles';s.textContent=`.records-tools{display:grid;grid-template-columns:minmax(220px,1.3fr) minmax(150px,.55fr) minmax(180px,.7fr) minmax(180px,.7fr);gap:8px;margin-bottom:12px}.records-tools input,.records-tools select,.records-col-filter{width:100%;border:1px solid var(--line);border-radius:7px;padding:8px;background:#fff}.records-table th{white-space:nowrap}.records-table td{max-width:300px;overflow:hidden;text-overflow:ellipsis}.records-row{cursor:pointer}.records-row:hover{background:#edf0e8}.records-filter-row th{padding:4px}.records-filter-row input{font-size:10px;padding:5px}@media(max-width:950px){.records-tools{grid-template-columns:1fr 1fr}}`;document.head.appendChild(s)}
 function render(){
- if(location.hash!=='#registros')return;const view=$('#app-view'),S=window.APP;if(!view||!S||view.querySelector('#records-v2'))return;styles();S.route='registros';
+ const view=$('#app-view'),S=window.APP;if(!view||!S||S.route!=='registros'||view.querySelector('#records-v2'))return;styles();
  const all=rows(),types=[...new Set(all.map(x=>x.type))].sort((a,b)=>a.localeCompare(b,'es'));
  view.innerHTML=`<div id="records-v2"><div class="page-head"><div><h1>Registros</h1><p style="color:var(--muted);margin:4px 0 0">Todos los registros operativos del ERP en una sola vista. Pulsa una fila para abrir o editar el registro concreto.</p></div></div><div class="records-tools"><input data-reg-global placeholder="Buscar en cualquier campo…"><select data-reg-type><option value="">Todos los tipos</option>${types.map(t=>`<option>${esc(t)}</option>`).join('')}</select><select data-reg-field></select><input data-reg-field-value placeholder="Filtrar valor del campo…"></div><div class="notice" style="margin-bottom:12px"><b data-reg-count>${all.length}</b> registros visibles. El filtro de campo permite buscar también por columnas internas que no aparecen en el resumen.</div><div class="card panel table-wrap"><table class="table records-table"><thead><tr><th>Tipo</th><th>Fecha</th><th>Referencia</th><th>Cliente / proveedor</th><th>Proyecto</th><th>Concepto</th><th>Estado</th><th>Base</th><th>Total / importe</th></tr><tr class="records-filter-row">${['_type','_date','_ref','_party','_project','_concept','_status','_base','_amount'].map(f=>`<th><input class="records-col-filter" data-reg-col="${f}" placeholder="Filtrar…"></th>`).join('')}</tr></thead><tbody data-reg-body></tbody></table></div></div>`;
  const state={type:'',global:'',field:'_type',fieldValue:'',cols:{}};
@@ -55,7 +55,7 @@ function render(){
  updateFields();draw();
  global.oninput=()=>{state.global=global.value.toLowerCase();draw()};typeSel.onchange=()=>{state.type=typeSel.value;updateFields();draw()};fieldSel.onchange=()=>{state.field=fieldSel.value;draw()};fieldValue.oninput=()=>{state.fieldValue=fieldValue.value.toLowerCase();draw()};document.querySelectorAll('[data-reg-col]').forEach(x=>x.oninput=()=>{state.cols[x.dataset.regCol]=x.value.toLowerCase();draw()});body.onclick=e=>{const tr=e.target.closest('[data-reg-index]');if(!tr)return;open(all[Number(tr.dataset.regIndex)])};
 }
-function schedule(){clearTimeout(timer);timer=setTimeout(()=>{if(location.hash==='#registros')render()},60)}
-document.addEventListener('click',e=>{const a=e.target.closest('[data-records-nav]');if(!a)return;e.preventDefault();e.stopImmediatePropagation();history.replaceState(null,'','#registros');window.APP.route='registros';const view=$('#app-view');if(view)view.innerHTML='';render();document.querySelectorAll('#main-nav .nav-item').forEach(x=>x.classList.toggle('active',x===a))},true);
-window.addEventListener('hashchange',schedule);window.addEventListener('load',schedule);new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});
+window.renderIriarteRecords=render;
+function schedule(){clearTimeout(timer);timer=setTimeout(()=>{if(window.APP?.route==='registros')render()},40)}
+document.addEventListener('iriarte:route',schedule);window.addEventListener('load',schedule);new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});
 })();
