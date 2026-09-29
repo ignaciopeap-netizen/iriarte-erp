@@ -1,7 +1,7 @@
 (function(){
 'use strict';
 const $=s=>document.querySelector(s);
-const labels={inicio:'Inicio',clientes:'Clientes',proyectos:'Proyectos',presupuestos:'Presupuestos',facturas:'Facturas',proveedores:'Proveedores',compras:'Compras',obra:'Obra',horas:'Horas',documentos:'Documentos',finanzas:'Finanzas',gastos:'Gastos generales',informes:'Informes'};
+const labels={inicio:'Inicio',clientes:'Clientes',proyectos:'Proyectos',presupuestos:'Presupuestos',facturas:'Facturas',proveedores:'Proveedores',compras:'Compras',obra:'Obra',horas:'Horas',documentos:'Documentos',finanzas:'Banco',gastos:'Gastos generales',informes:'Finanzas'};
 const routes=new Set(['presupuestos','facturas','compras','obra','horas','documentos','finanzas']);
 let timer;
 function clean(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
@@ -10,7 +10,7 @@ function applyBrand(){
  const mark=$('.brand-mark');if(mark&&!mark.dataset.logoReady){mark.dataset.logoReady='1';mark.classList.add('with-logo');mark.innerHTML='<img alt="Sonsoles Pérez Iriarte">';mark.querySelector('img').src=logo}
  const card=$('.auth-card');if(card&&!card.querySelector('.auth-brand')){const w=document.createElement('div');w.className='auth-brand';w.innerHTML='<img alt="Sonsoles Pérez Iriarte">';w.querySelector('img').src=logo;card.prepend(w);const e=card.querySelector('.eyebrow');if(e)e.textContent='Acceso privado';const h=card.querySelector('h1');if(h&&!card.querySelector('.auth-subtitle')){const p=document.createElement('p');p.className='auth-subtitle';p.textContent='Gestión de clientes, proyectos, presupuestos, obra y finanzas.';h.after(p)}}
 }
-function applyNav(){const starts=new Set(['presupuestos','proveedores','obra','finanzas']);document.querySelectorAll('.nav-item[data-route]').forEach(a=>{a.dataset.groupStart=starts.has(a.dataset.route)?'true':'false';a.title=labels[a.dataset.route]||a.textContent.trim()})}
+function applyNav(){const starts=new Set(['presupuestos','proveedores','obra','finanzas']);document.querySelectorAll('.nav-item[data-route]').forEach(a=>{a.dataset.groupStart=starts.has(a.dataset.route)?'true':'false';const label=labels[a.dataset.route];if(label&&a.textContent!==label)a.textContent=label;a.title=label||a.textContent.trim()})}
 function applyContext(){
  const S=window.APP,v=$('#app-view');if(!S||!v)return;const old=$('#ux-project-context'),id=S.sel&&S.sel.project;
  if(!id||!routes.has(S.route)){if(old)old.remove();return}
