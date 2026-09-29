@@ -17,6 +17,8 @@
     return (p.items||[]).reduce((a,x)=>a+num(x.qty??x.cantidad)*num(x.price??x.precio),0);
   }
   function dateValue(p){const d=p.date||p.fecha;return /^\d{4}-\d{2}-\d{2}$/.test(String(d||''))?String(d):today()}
+  function fullInvoicesForBudget(id){return (window.APP?.data?.facturas||[]).filter(x=>String(x.presupuesto_id||'')===String(id)&&!x.presupuesto_fase_id&&String(x.estado||'').toLowerCase()!=='anulada')}
+  function openInvoice(id,projectId){if(projectId)window.APP.sel.project=projectId;localStorage.setItem('iriarte_open_invoice',id);if(window.iriarteRoute)window.iriarteRoute('facturas');else location.hash='#facturas'}
 
   async function syncCurrentBudget(p){
     const client=db();if(!client)throw new Error('La conexión todavía no está preparada.');
@@ -77,16 +79,28 @@
 
   async function createInvoice(){
     const p=currentBudget(),client=db();if(!p||!client)return;
+    const existing=fullInvoicesForBudget(p.id);
+    if(existing.length){
+      const x=[...existing].sort((a,b)=>String(b.created_at||b.fecha||'').localeCompare(String(a.created_at||a.fecha||'')))[0];
+      alert(existing.length===1?'Este presupuesto ya tiene una factura vinculada. Se abrirá la factura existente.':`Este presupuesto ya tiene ${existing.length} facturas completas activas vinculadas. Se abrirá la más reciente para revisarlas antes de crear nada más.`);
+      openInvoice(x.id,x.proyecto_id||p.proyecto_id);return;
+    }
     try{
       await syncCurrentBudget(p);
-      const {data,error}=await client.rpc('crear_factura_desde_presupuesto_v2',{p_presupuesto_id:p.id});if(error)throw error;
+      const {data,error}=await client.rpc('crear_factura_desde_presupuesto_v2',{p_presupuesto_id:p.id});
+      if(error){
+        if(error.code==='23505'){
+          const {data:rows}=await client.from('facturas').select('id,proyecto_id,estado,created_at').eq('presupuesto_id',p.id).is('presupuesto_fase_id',null).neq('estado','anulada').order('created_at',{ascending:false}).limit(1);
+          if(rows?.[0]){alert('La factura ya había sido creada. Se abrirá el registro existente.');openInvoice(rows[0].id,rows[0].proyecto_id||p.proyecto_id);return}
+        }
+        throw error;
+      }
       const invoiceId=data?.invoice_id,projectId=data?.project_id;if(!invoiceId)throw new Error('La base de datos no devolvió la factura creada.');
-      if(projectId)window.APP.sel.project=projectId;
-      localStorage.setItem('iriarte_open_invoice',invoiceId);location.hash='#facturas';location.reload();
+      openInvoice(invoiceId,projectId);
     }catch(err){alert('No se pudo crear la factura desde el presupuesto:\n'+(err.message||err))}
   }
 
-  function decorate(){clearTimeout(timer);timer=setTimeout(()=>{if(window.APP?.route!=='presupuestos'||window.APP?.budgetView!=='edit')return;const p=currentBudget(),b=document.querySelector('[data-action="budget-to-project"]');if(!b||!p)return;if(p.proyecto_id)b.style.display='none';else{b.style.display='';b.textContent='Vincular a proyecto'}},50)}
+  function decorate(){clearTimeout(timer);timer=setTimeout(()=>{if(window.APP?.route!=='presupuestos'||window.APP?.budgetView!=='edit')return;const p=currentBudget(),b=document.querySelector('[data-action="budget-to-project"]');if(b&&p){if(p.proyecto_id)b.style.display='none';else{b.style.display='';b.textContent='Vincular a proyecto'}}const invoice=document.querySelector('[data-action="budget-to-invoice"]');if(invoice&&p){const existing=fullInvoicesForBudget(p.id);invoice.textContent=existing.length?'Abrir factura':'Crear factura';invoice.title=existing.length?'Este presupuesto ya tiene una factura completa vinculada.':''}},50)}
   new MutationObserver(decorate).observe(document.body,{childList:true,subtree:true});window.addEventListener('hashchange',decorate);window.addEventListener('load',decorate);
   document.addEventListener('click',e=>{
     const b=e.target.closest('[data-action]');if(!b)return;
