@@ -1,4 +1,4 @@
-// Iriarte ERP V2 · informes operativos, financieros y control de integridad
+// Iriarte ERP V2 · finanzas, informes y control de integridad
 (function(){
 'use strict';
 const db=()=>window.__iriarteDb;
@@ -27,18 +27,18 @@ function integrityPanel(i={}){
 async function render(){
  if(window.APP?.route!=='informes'||loading)return;const view=$('#app-view');if(!view||view.querySelector('#reports-v2'))return;
  const my=++token;loading=true;
- view.innerHTML='<div class="page-head"><h1>Informes</h1></div><div class="card panel"><div class="empty">Calculando informes…</div></div>';
+ view.innerHTML='<div class="page-head"><h1>Finanzas</h1></div><div class="card panel"><div class="empty">Calculando…</div></div>';
  try{
   const [{data:projects,error:e1},{data:months,error:e2},{data:integrity,error:e3}]=await Promise.all([
    db().from('v_proyectos_resumen').select('*'),
    db().from('v_finanzas_mensual').select('*').order('mes',{ascending:false}).limit(24),
    db().from('v_control_integridad_erp').select('*').maybeSingle()
   ]);if(my!==token||window.APP?.route!=='informes')return;
-  if(e1||e2){view.innerHTML=`<div id="reports-v2"><div class="page-head"><h1>Informes</h1></div><div class="notice" style="background:#f6dfd7;color:#8f4d3c">${esc(e1?.message||e2?.message||'No se pudieron cargar los informes')}</div></div>`;return}
+  if(e1||e2){view.innerHTML=`<div id="reports-v2"><div class="page-head"><h1>Finanzas</h1></div><div class="notice" style="background:#f6dfd7;color:#8f4d3c">${esc(e1?.message||e2?.message||'No se pudieron cargar los informes financieros')}</div></div>`;return}
   const D=window.APP.data,unlinked={facturas:(D.facturas||[]).filter(x=>!x.proyecto_id).length,compras:(D.compras||[]).filter(x=>!x.proyecto_id).length,horas:(D.horas||[]).filter(x=>!x.proyecto_id).length,movs:(D.movs||[]).filter(x=>!x.proyecto_id).length};
   const overheadFor=pid=>(D.gastos||[]).filter(g=>String(g.proyecto_id||'')===String(pid)).reduce((a,g)=>a+num(g.base),0);
   const totalMargin=(projects||[]).reduce((a,x)=>a+num(x.margen_directo),0),totalInv=(projects||[]).reduce((a,x)=>a+num(x.ingresos_facturados),0),totalCosts=(projects||[]).reduce((a,x)=>a+num(x.costes_compras)+num(x.coste_horas),0),linkedOverhead=(projects||[]).reduce((a,x)=>a+overheadFor(x.proyecto_id),0);
-  view.innerHTML=`<div id="reports-v2"><div class="page-head"><div><h1>Informes</h1><p style="color:var(--muted);margin:4px 0 0">Rentabilidad directa y evolución financiera del estudio.</p></div></div>
+  view.innerHTML=`<div id="reports-v2"><div class="page-head"><div><h1>Finanzas</h1><p style="color:var(--muted);margin:4px 0 0">Rentabilidad directa, evolución financiera y control de integridad del estudio.</p></div></div>
   <div class="grid cols-4"><div class="card kpi"><small>Facturado base por proyectos</small><strong>${money(totalInv)}</strong></div><div class="card kpi"><small>Costes directos</small><strong>${money(totalCosts)}</strong></div><div class="card kpi"><small>Margen directo</small><strong class="${totalMargin<0?'negative':'positive'}">${money(totalMargin)}</strong></div><div class="card kpi"><small>Gastos generales vinculados</small><strong>${money(linkedOverhead)}</strong></div></div>
   ${e3?`<div class="notice" style="margin-top:14px;background:#fff2d8;color:#745b24"><b>Control de integridad no disponible:</b> ${esc(e3.message)}</div>`:integrityPanel(integrity||{})}
   <div class="notice" style="margin-top:14px"><b>Registros pendientes de atribución:</b> facturas sin proyecto: ${unlinked.facturas} · compras sin proyecto: ${unlinked.compras} · horas sin proyecto: ${unlinked.horas} · movimientos bancarios sin proyecto: ${unlinked.movs}. Los registros no vinculados no se atribuyen a la rentabilidad de un proyecto.</div>
