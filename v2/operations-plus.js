@@ -62,8 +62,8 @@
     const {data,error}=await db.storage.from(bucket).createSignedUrl(path,120);if(error){alert(error.message);return}window.open(data.signedUrl,'_blank','noopener');
   }
   async function remove(table,id){if(!confirm('¿Eliminar este registro?'))return;const {error}=await db.from(table).delete().eq('id',id);if(error){alert(error.message);return}if(window.reloadIriarte)await window.reloadIriarte();else location.reload()}
-  async function completeTask(id){const {error}=await db.from('obra_tareas').update({estado:'completada'}).eq('id',id);if(error)alert(error.message);else if(window.reloadIriarte)await window.reloadIriarte();else location.reload()}
-  async function resolveIncident(id){const {error}=await db.from('obra_incidencias').update({estado:'resuelta'}).eq('id',id);if(error)alert(error.message);else if(window.reloadIriarte)await window.reloadIriarte();else location.reload()}
+  async function completeTask(id){const {error}=await db.from('obra_tareas').update({estado:'completada',fecha_completada:today()}).eq('id',id);if(error)alert(error.message);else if(window.reloadIriarte)await window.reloadIriarte();else location.reload()}
+  async function resolveIncident(id){const {error}=await db.from('obra_incidencias').update({estado:'resuelta',fecha_resolucion:today()}).eq('id',id);if(error)alert(error.message);else if(window.reloadIriarte)await window.reloadIriarte();else location.reload()}
 
   function enhance(){clearTimeout(timer);timer=setTimeout(()=>{const route=window.APP?.route;if(!['obra','horas','documentos'].includes(route))return;if($('#op-workspace'))return;if(route==='obra')renderObra();else if(route==='horas')renderHours();else renderDocs()},80)}
   new MutationObserver(enhance).observe(document.body,{childList:true,subtree:true});window.addEventListener('hashchange',enhance);window.addEventListener('load',enhance);
