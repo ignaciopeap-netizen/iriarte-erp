@@ -28,25 +28,27 @@ function prepareUploader(){
  form.querySelector('.form-grid')?.after(info);
  function show(text){info.textContent=text;info.style.display=text?'block':'none'}
  function chooseInvoice(){
-   if(!invoice?.value)return;
-   const x=(D.facturas||[]).find(v=>String(v.id)===String(invoice.value));if(!x)return;
+   if(!invoice?.value)return false;
+   const x=(D.facturas||[]).find(v=>String(v.id)===String(invoice.value));if(!x)return false;
    if(purchase)purchase.value='';
-   if(project&&x.proyecto_id)project.value=x.proyecto_id;
-   if(client&&x.cliente_id)client.value=x.cliente_id;
+   if(project)project.value=x.proyecto_id||'';
+   if(client)client.value=x.cliente_id||'';
    if(supplier)supplier.value='';
-   show(`El documento quedará vinculado a la factura ${x.numero||'borrador'}${x.proyecto_id?' y heredará su proyecto':''}.`);
+   show(`El documento quedará vinculado a la factura ${x.numero||'borrador'} y heredará automáticamente su proyecto y cliente.`);return true
  }
  function choosePurchase(){
-   if(!purchase?.value)return;
-   const x=(D.compras||[]).find(v=>String(v.id)===String(purchase.value));if(!x)return;
+   if(!purchase?.value)return false;
+   const x=(D.compras||[]).find(v=>String(v.id)===String(purchase.value));if(!x)return false;
    if(invoice)invoice.value='';
-   if(project&&x.proyecto_id)project.value=x.proyecto_id;
-   if(supplier&&x.proveedor_id)supplier.value=x.proveedor_id;
+   if(project)project.value=x.proyecto_id||'';
+   if(supplier)supplier.value=x.proveedor_id||'';
    if(client)client.value='';
-   show(`El documento quedará vinculado a la compra ${x.numero_factura||x.concepto||''}${x.proyecto_id?' y heredará su proyecto':''}.`);
+   show(`El documento quedará vinculado a la compra ${x.numero_factura||x.concepto||''} y heredará automáticamente su proyecto y proveedor.`);return true
  }
- if(invoice)invoice.addEventListener('change',chooseInvoice);
- if(purchase)purchase.addEventListener('change',choosePurchase);
+ function enforceFinancialContext(){if(invoice?.value)return chooseInvoice();if(purchase?.value)return choosePurchase();return false}
+ if(invoice)invoice.addEventListener('change',()=>{if(!invoice.value){show('');return}chooseInvoice()});
+ if(purchase)purchase.addEventListener('change',()=>{if(!purchase.value){show('');return}choosePurchase()});
+ [project,client,supplier].filter(Boolean).forEach(x=>x.addEventListener('change',()=>{if(invoice?.value||purchase?.value)queueMicrotask(enforceFinancialContext)}));
  const pending=window.__iriartePendingDocumentContext;
  if(pending){
    if(pending.factura_id&&invoice){invoice.value=pending.factura_id;chooseInvoice()}
