@@ -15,19 +15,20 @@ function numericIssue(form){
  }
  return null
 }
+function dateIssue(form){const date=String(form.elements.fecha?.value||''),due=String(form.elements.fecha_vencimiento?.value||'');if(date&&due&&due<date){mark(form.elements.fecha_vencimiento,true);return {msg:'La fecha de vencimiento no puede ser anterior a la fecha de la factura.',focus:form.elements.fecha_vencimiento}}return null}
 function enhance(){
  clearTimeout(timer);timer=setTimeout(()=>{
    const form=document.querySelector('#invoice-pro-form');if(!form)return;
    const state=form.elements.estado;if(state&&!Array.from(state.options).some(o=>o.value==='anulada'))state.appendChild(option('anulada','anulada'));
    if(form.dataset.numericGuard==='1')return;form.dataset.numericGuard='1';
-   form.addEventListener('input',e=>{const input=e.target;if(!input.matches('[data-k="cantidad"],[data-k="precio_unitario"],[data-k="descuento_pct"],[data-k="iva_pct"],input[name="irpf_pct"]'))return;const k=input.dataset.k,v=num(input.value);let bad=!Number.isFinite(v);if(k==='cantidad'||k==='precio_unitario')bad=bad||v<0;else bad=bad||v<0||v>100;mark(input,bad)});
+   form.addEventListener('input',e=>{const input=e.target;if(input===form.elements.fecha||input===form.elements.fecha_vencimiento){const bad=!!(form.elements.fecha?.value&&form.elements.fecha_vencimiento?.value&&form.elements.fecha_vencimiento.value<form.elements.fecha.value);mark(form.elements.fecha_vencimiento,bad);return}if(!input.matches('[data-k="cantidad"],[data-k="precio_unitario"],[data-k="descuento_pct"],[data-k="iva_pct"],input[name="irpf_pct"]'))return;const k=input.dataset.k,v=num(input.value);let bad=!Number.isFinite(v);if(k==='cantidad'||k==='precio_unitario')bad=bad||v<0;else bad=bad||v<0||v>100;mark(input,bad)});
  },35)
 }
 new MutationObserver(enhance).observe(document.body,{childList:true,subtree:true});window.addEventListener('load',enhance);
 document.addEventListener('submit',e=>{
  const form=e.target;if(form?.id!=='invoice-pro-form')return;
- const error=document.querySelector('#invoice-pro-error'),numeric=numericIssue(form);
- if(numeric){e.preventDefault();e.stopImmediatePropagation();if(error)error.innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c"><b>Revisa los importes.</b><br>${numeric.msg}</div>`;numeric.focus?.focus();return}
+ const error=document.querySelector('#invoice-pro-error'),dates=dateIssue(form),numeric=numericIssue(form);
+ if(dates||numeric){const issue=dates||numeric;e.preventDefault();e.stopImmediatePropagation();if(error)error.innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c"><b>Revisa la factura.</b><br>${issue.msg}</div>`;issue.focus?.focus();return}
  const fd=new FormData(form),state=String(fd.get('estado')||'borrador').toLowerCase();if(['borrador','anulada'].includes(state))return;
  const number=String(fd.get('numero')||'').trim(),client=String(fd.get('cliente_id')||'').trim(),project=String(fd.get('proyecto_id')||'').trim(),lines=[...form.querySelectorAll('[data-invoice-line]')];
  let msg='',focus=null;
