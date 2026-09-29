@@ -9,8 +9,18 @@ function issuedInvoice(x){return !['borrador','anulada'].includes(String(x?.esta
 function activePurchase(x){return String(x?.estado||'').toLowerCase()!=='anulada'}
 function pendingInvoice(S,x){const paid=sum((S.data.cobros||[]).filter(c=>String(c.factura_id)===String(x.id)),c=>c.importe);return Math.max(0,n(x.total)-paid)}
 function pendingPurchase(S,x){const paid=sum((S.data.pagos||[]).filter(p=>String(p.compra_id)===String(x.id)),p=>p.importe);return Math.max(0,n(x.total)-paid)}
+function signedMovement(x){const amount=Math.abs(n(x.total??x.importe));return ['pago','gasto'].includes(String(x.tipo||'').toLowerCase())?-amount:amount}
+function patchBankKpi(S,view){
+ const card=[...view.querySelectorAll('.card.kpi')].find(x=>x.querySelector('small')?.textContent?.trim()==='Tesorería');if(!card)return;
+ const balance=sum(S.data.movs||[],signedMovement),label=card.querySelector('small'),value=card.querySelector('strong');
+ if(label)label.textContent='Saldo de movimientos';
+ if(value){value.textContent=eur(balance);value.classList.remove('positive','negative');value.classList.add(balance<0?'negative':'positive')}
+ card.title='Saldo neto del libro de movimientos financieros. Coincide con el criterio mostrado en Banco.';
+}
 function render(){
- const S=window.APP,view=document.querySelector('#app-view');if(!S||S.route!=='inicio'||!view||view.querySelector('.ux-attention'))return;
+ const S=window.APP,view=document.querySelector('#app-view');if(!S||S.route!=='inicio'||!view)return;
+ patchBankKpi(S,view);
+ if(view.querySelector('.ux-attention'))return;
  const invoices=(S.data.facturas||[]).filter(issuedInvoice),purchases=(S.data.compras||[]).filter(activePurchase);
  const collect=sum(invoices,x=>pendingInvoice(S,x)),pay=sum(purchases,x=>pendingPurchase(S,x));
  const pendingInvoices=invoices.filter(x=>pendingInvoice(S,x)>.009),overdue=pendingInvoices.filter(x=>x.fecha_vencimiento&&x.fecha_vencimiento<today()).length;
