@@ -34,6 +34,10 @@ body{background:radial-gradient(circle at 15% -10%,rgba(255,255,255,.72),transpa
 .table td{line-height:1.42}
 .table tbody tr:last-child td{border-bottom:0}
 .table td .btn{padding:6px 9px;font-size:11px}
+#clients-plus .table td:nth-child(4),#suppliers-plus .table td:nth-child(5){max-width:260px;overflow-wrap:anywhere;word-break:break-word;white-space:normal}
+#clients-plus .table td:first-child,#suppliers-plus .table td:first-child{min-width:150px}
+[data-ch-record],[data-project-record],.records-row{transition:background-color .14s ease,box-shadow .14s ease}
+[data-ch-record]:hover,[data-project-record]:hover,.records-row:hover{background:#edf1e9!important}
 .master{max-height:calc(100vh - 135px);overflow:auto;align-self:start;position:sticky;top:87px}
 .master-item b{line-height:1.35}.master-item small{display:block;margin-top:3px;line-height:1.35}
 .empty{background:linear-gradient(180deg,#fbfaf6,#f8f5ed);padding:34px 24px}
