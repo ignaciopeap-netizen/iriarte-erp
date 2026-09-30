@@ -50,9 +50,14 @@ jobs:
             echo "Superseded records-route.js must not be loaded" >&2
             exit 1
           fi
+          if grep -q 'src="./project-overhead-view.js"' v2/index.html; then
+            echo "Project must expose a single profitability panel" >&2
+            exit 1
+          fi
           grep -q "v_proyectos_operativos" v2/app-core.js
           grep -q "from('proyectos')" v2/project-actions.js
           grep -q "crear_factura_desde_presupuesto_v2" v2/budget-workflow-fix.js
+          grep -q "Vincula proyecto antes de facturar" v2/budget-workflow-fix.js
           grep -q "crear_factura_desde_fase_v2" v2/billing-phases.js
           grep -q "guardar_factura_v2" v2/invoice-atomic-save.js
           grep -q "conciliar_movimiento_v2" v2/reconciliation-sync.js
@@ -87,6 +92,15 @@ jobs:
             exit 1
           fi
           grep -q "newTask" v2/operations-plus.js
+          grep -q "tarea_id:vals.tarea_id" v2/document-upload.js
+          grep -q "incidencia_id:vals.incidencia_id" v2/document-upload.js
+          grep -q "filterOperational" v2/document-context.js
+          grep -q "data-fdl-task" v2/financial-document-links.js
+          grep -q "data-fdl-incident" v2/financial-document-links.js
+          if grep -q "'new-doc':documentForm" v2/enhancements.js; then
+            echo "Duplicate document uploader must not return" >&2
+            exit 1
+          fi
           grep -q "renderIriarteRecords" v2/records.js
           grep -q "columnsFor" v2/records.js
           echo "Canonical V2 schema and workflow guards passed"
@@ -102,7 +116,7 @@ jobs:
             'db-bridge.js','runtime-guard.js','app-core.js','navigation-v2.js','auth-recovery.js','project-actions.js','contacts-plus.js','active-contact-selectors.js','contact-hubs.js',
             'document-upload.js','document-context.js','operations-plus.js','enhancements.js','reconciliation-sync.js','workflow-plus.js','invoice-edit-context.js','invoice-pro.js','invoice-atomic-save.js','invoice-guard.js',
             'derived-status-guard.js','presupuestos-plus.js','budget-ergonomics.js','budget-validation.js','budget-workflow-fix.js','budget-work-view.js','budget-pdf.js',
-            'project-hub.js','project-finance-guard.js','project-overhead-view.js','billing-phases.js','purchases-plus.js','financial-document-links.js','bank-import-complete.js',
+            'project-hub.js','project-finance-guard.js','billing-phases.js','purchases-plus.js','financial-document-links.js','operations-edit.js','bank-import-complete.js',
             'finance-view-fix.js','issued-finance-ui.js','reports-plus.js','auto-open.js','record-open.js','records.js','dashboard-attention.js','ux-finish.js'
           ]
           missing=[x for x in required if x not in pos]
@@ -122,10 +136,10 @@ jobs:
               raise SystemExit('Invoice context/save/guard ordering is invalid')
           if not pos['presupuestos-plus.js'] < pos['budget-ergonomics.js'] < pos['budget-validation.js'] < pos['budget-workflow-fix.js'] < pos['budget-work-view.js'] < pos['budget-pdf.js']:
               raise SystemExit('Budget editor/workflow/output ordering is invalid')
-          if not pos['project-hub.js'] < pos['project-finance-guard.js'] < pos['project-overhead-view.js'] < pos['billing-phases.js']:
-              raise SystemExit('Project finance/overhead ordering is invalid')
-          if not pos['purchases-plus.js'] < pos['financial-document-links.js']:
-              raise SystemExit('Financial document links must load after purchases-plus.js')
+          if not pos['project-hub.js'] < pos['project-finance-guard.js'] < pos['billing-phases.js']:
+              raise SystemExit('Project finance/billing ordering is invalid')
+          if not pos['purchases-plus.js'] < pos['financial-document-links.js'] < pos['operations-edit.js']:
+              raise SystemExit('Purchase/document/operational edit ordering is invalid')
           if not pos['finance-view-fix.js'] < pos['issued-finance-ui.js'] < pos['reports-plus.js']:
               raise SystemExit('Issued finance UI must load after finance rendering and before reports')
           if not pos['auto-open.js'] < pos['record-open.js'] < pos['records.js']:
