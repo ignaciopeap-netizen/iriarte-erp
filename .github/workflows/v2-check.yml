@@ -163,6 +163,7 @@ jobs:
           test -f MIGRACION_FINANZAS_EMITIDAS_V2.sql
           test -f MIGRACION_VALIDACION_COBROS_PAGOS_V2.sql
           test -f MIGRACION_FASE_ESTADO_FACTURA_V2.sql
+          test -f MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql
           grep -q "recalc_factura_totals" MIGRACION_FACTURA_DESDE_PRESUPUESTO_V2.sql
           grep -q "recalc_factura_totals" MIGRACION_FACTURA_DESDE_FASE_V2.sql
           grep -q "guardar_factura_v2" MIGRACION_GUARDAR_FACTURA_V2.sql
@@ -180,4 +181,11 @@ jobs:
           grep -q "validar_cobro_v2" MIGRACION_VALIDACION_COBROS_PAGOS_V2.sql
           grep -q "validar_pago_v2" MIGRACION_VALIDACION_COBROS_PAGOS_V2.sql
           grep -q "when 'borrador' then 'pendiente'" MIGRACION_FASE_ESTADO_FACTURA_V2.sql
+          grep -q "crear_factura_desde_presupuesto_v2" MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql
+          grep -q "crear_factura_desde_fase_v2" MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql
+          grep -q "Antes de facturar, vincula el presupuesto a un proyecto" MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql
+          if grep -qi "insert into public.proyectos\|update public.presupuestos" MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql; then
+            echo "Invoice creation must not create projects or mutate the source budget" >&2
+            exit 1
+          fi
           echo "Critical SQL workflow files are present"
