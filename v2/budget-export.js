@@ -1,4 +1,4 @@
-// Iriarte ERP V2 · exportaciones de Presupuestos para Excel
+// Iriarte ERP V2 · exportaciones de Presupuestos para Excel/CSV
 (function(){
 'use strict';
 const escFile=v=>String(v||'presupuesto').normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-zA-Z0-9._-]+/g,'_').replace(/_+/g,'_').slice(0,90);
@@ -19,11 +19,9 @@ function exportBudget(mode){
  const text=out.map(r=>r.map(csvCell).join(';')).join('\r\n');download(text,`${escFile(p.ref||p.name||p.nombre||'presupuesto')}_${supplier?'proveedor':'cliente'}.csv`);
 }
 function inject(){clearTimeout(timer);timer=setTimeout(()=>{
- const A=window.APP,p=current();if(A?.route!=='presupuestos'||A?.budgetView!=='edit'||!p||p.kind==='honorarios')return;
- const host=document.querySelector('#pp-extra-controls .toolbar');if(!host||host.querySelector('[data-budget-excel]'))return;
- const client=document.createElement('button');client.type='button';client.className='btn';client.textContent='Excel cliente';client.dataset.budgetExcel='client';
- const supplier=document.createElement('button');supplier.type='button';supplier.className='btn';supplier.textContent='Excel proveedor';supplier.dataset.budgetExcel='supplier';
- host.prepend(supplier);host.prepend(client);
+ const A=window.APP,p=current();if(A?.route!=='presupuestos'||!['client','supplier'].includes(A?.budgetView)||!p||p.kind==='honorarios')return;
+ const host=document.querySelector('#pp-print-actions');if(!host||host.querySelector('[data-budget-excel]'))return;
+ const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='Excel / CSV';b.dataset.budgetExcel=A.budgetView;b.title=A.budgetView==='supplier'?'Exportar listado sin precios para proveedor':'Exportar presupuesto de cliente con precios';host.appendChild(b);
 },80)}
 new MutationObserver(inject).observe(document.body,{subtree:true,childList:true});window.addEventListener('hashchange',inject);window.addEventListener('load',inject);
 document.addEventListener('click',e=>{const b=e.target.closest('[data-budget-excel]');if(!b)return;e.preventDefault();exportBudget(b.dataset.budgetExcel)},true);
