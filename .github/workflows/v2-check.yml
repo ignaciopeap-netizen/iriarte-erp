@@ -33,7 +33,7 @@ jobs:
               raise SystemExit('Missing V2 assets: '+', '.join(missing))
           print('All local V2 assets are present:', ', '.join(refs))
           PY
-      - name: Guard known schema regressions
+      - name: Guard known schema and workflow regressions
         run: |
           set -e
           if grep -R "base_imponible" v2 --include='*.js'; then
@@ -45,6 +45,11 @@ jobs:
             exit 1
           fi
           grep -q 'src="./app-core.js"' v2/index.html
+          grep -q 'src="./navigation-v2.js"' v2/index.html
+          if grep -q 'src="./records-route.js"' v2/index.html; then
+            echo "Superseded records-route.js must not be loaded" >&2
+            exit 1
+          fi
           grep -q "v_proyectos_operativos" v2/app-core.js
           grep -q "from('proyectos')" v2/project-actions.js
           grep -q "crear_factura_desde_presupuesto_v2" v2/budget-workflow-fix.js
@@ -52,6 +57,11 @@ jobs:
           grep -q "guardar_factura_v2" v2/invoice-atomic-save.js
           grep -q "conciliar_movimiento_v2" v2/reconciliation-sync.js
           grep -q "Solo se muestran facturas emitidas" v2/reconciliation-sync.js
+          if grep -q "window.iriarteReconcileMovement=reconcile" v2/workflow-plus.js; then
+            echo "Legacy reconciliation must not override the canonical atomic reconciler" >&2
+            exit 1
+          fi
+          grep -q "proveedor_id:f.proveedor_id" v2/workflow-plus.js
           grep -q "filter(issuedInvoice)" v2/workflow-plus.js
           grep -q "Emítela antes de registrar cobros" v2/workflow-plus.js
           grep -q "v_control_integridad_erp" v2/reports-plus.js
@@ -59,15 +69,27 @@ jobs:
           grep -q "facturas_borrador_con_cobros" v2/reports-plus.js
           grep -q "fases_pendientes_con_factura_emitida" v2/reports-plus.js
           grep -q "Gastos generales vinculados" v2/reports-plus.js
+          grep -q "Saldo IVA estimado" v2/reports-plus.js
+          grep -q "Vencimientos" v2/reports-plus.js
+          grep -q "Ratios financieros" v2/reports-plus.js
           grep -q "borrador.*anulada\|anulada.*borrador" v2/project-finance-guard.js
+          grep -q "project-profitability-panel" v2/project-hub.js
           grep -q "issued-finance-ui.js" v2/index.html
-          grep -q "function exact(rows" v2/bank-import-complete.js
+          grep -q "function uniqueExact(rows" v2/bank-import-complete.js
           grep -q "removeExistingOccurrences" v2/bank-import-complete.js
           if grep -q 'src="./bank-import-pro.js"' v2/index.html; then
             echo "Obsolete bank importer must not be loaded" >&2
             exit 1
           fi
-          echo "Canonical V2 schema guards passed"
+          grep -q "Listado sin precios — Estudio de Jardinería y Paisajismo Sonsoles Pérez Iriarte" v2/presupuestos-plus.js
+          if grep -q "data-pp-client\|data-pp-supplier" v2/presupuestos-plus.js; then
+            echo "Trabajo must not duplicate client/supplier output controls" >&2
+            exit 1
+          fi
+          grep -q "newTask" v2/operations-plus.js
+          grep -q "renderIriarteRecords" v2/records.js
+          grep -q "columnsFor" v2/records.js
+          echo "Canonical V2 schema and workflow guards passed"
       - name: Guard critical module loading
         run: |
           python - <<'PY'
@@ -77,32 +99,37 @@ jobs:
           scripts=re.findall(r'<script src="\./([^"]+)"></script>', html)
           pos={name:i for i,name in enumerate(scripts)}
           required=[
-            'db-bridge.js','runtime-guard.js','app-core.js','auth-recovery.js','project-actions.js','contacts-plus.js','contact-hubs.js',
-            'document-upload.js','document-context.js','enhancements.js','reconciliation-sync.js','workflow-plus.js','invoice-edit-context.js','invoice-pro.js','invoice-atomic-save.js','invoice-guard.js',
-            'derived-status-guard.js','budget-workflow-fix.js','project-hub.js','project-finance-guard.js','project-overhead-view.js','billing-phases.js','purchases-plus.js','financial-document-links.js','bank-import-complete.js',
-            'finance-view-fix.js','issued-finance-ui.js','reports-plus.js','auto-open.js','dashboard-attention.js','ux-finish.js'
+            'db-bridge.js','runtime-guard.js','app-core.js','navigation-v2.js','auth-recovery.js','project-actions.js','contacts-plus.js','active-contact-selectors.js','contact-hubs.js',
+            'document-upload.js','document-context.js','operations-plus.js','enhancements.js','reconciliation-sync.js','workflow-plus.js','invoice-edit-context.js','invoice-pro.js','invoice-atomic-save.js','invoice-guard.js',
+            'derived-status-guard.js','presupuestos-plus.js','budget-ergonomics.js','budget-validation.js','budget-workflow-fix.js','budget-work-view.js','budget-pdf.js',
+            'project-hub.js','project-finance-guard.js','project-overhead-view.js','billing-phases.js','purchases-plus.js','financial-document-links.js','bank-import-complete.js',
+            'finance-view-fix.js','issued-finance-ui.js','reports-plus.js','auto-open.js','record-open.js','records.js','dashboard-attention.js','ux-finish.js'
           ]
           missing=[x for x in required if x not in pos]
           if missing:
               raise SystemExit('Missing critical V2 scripts: '+', '.join(missing))
-          if not pos['db-bridge.js'] < pos['runtime-guard.js'] < pos['app-core.js'] < pos['auth-recovery.js']:
-              raise SystemExit('DB/runtime/auth bootstrap ordering is invalid')
+          if not pos['db-bridge.js'] < pos['runtime-guard.js'] < pos['app-core.js'] < pos['navigation-v2.js'] < pos['auth-recovery.js']:
+              raise SystemExit('DB/runtime/navigation/auth bootstrap ordering is invalid')
           if not pos['app-core.js'] < pos['project-actions.js']:
               raise SystemExit('project-actions.js must load after app-core.js')
-          if not pos['contacts-plus.js'] < pos['contact-hubs.js']:
-              raise SystemExit('contact-hubs.js must load after contacts-plus.js')
-          if not pos['app-core.js'] < pos['document-upload.js'] < pos['document-context.js'] < pos['enhancements.js']:
-              raise SystemExit('Document upload/context ordering is invalid')
+          if not pos['contacts-plus.js'] < pos['active-contact-selectors.js'] < pos['contact-hubs.js']:
+              raise SystemExit('Contact selector/hub ordering is invalid')
+          if not pos['app-core.js'] < pos['document-upload.js'] < pos['document-context.js'] < pos['operations-plus.js'] < pos['enhancements.js']:
+              raise SystemExit('Document/Obra/general enhancement ordering is invalid')
           if not pos['reconciliation-sync.js'] < pos['workflow-plus.js']:
               raise SystemExit('reconciliation-sync.js must load before workflow-plus.js')
           if not pos['invoice-edit-context.js'] < pos['invoice-pro.js'] < pos['invoice-atomic-save.js'] < pos['invoice-guard.js'] < pos['derived-status-guard.js']:
               raise SystemExit('Invoice context/save/guard ordering is invalid')
+          if not pos['presupuestos-plus.js'] < pos['budget-ergonomics.js'] < pos['budget-validation.js'] < pos['budget-workflow-fix.js'] < pos['budget-work-view.js'] < pos['budget-pdf.js']:
+              raise SystemExit('Budget editor/workflow/output ordering is invalid')
           if not pos['project-hub.js'] < pos['project-finance-guard.js'] < pos['project-overhead-view.js'] < pos['billing-phases.js']:
               raise SystemExit('Project finance/overhead ordering is invalid')
           if not pos['purchases-plus.js'] < pos['financial-document-links.js']:
               raise SystemExit('Financial document links must load after purchases-plus.js')
           if not pos['finance-view-fix.js'] < pos['issued-finance-ui.js'] < pos['reports-plus.js']:
               raise SystemExit('Issued finance UI must load after finance rendering and before reports')
+          if not pos['auto-open.js'] < pos['record-open.js'] < pos['records.js']:
+              raise SystemExit('Exact record navigation must load before Registros')
           print('Critical V2 module loading and ordering are correct')
           PY
       - name: Guard SQL workflow files
