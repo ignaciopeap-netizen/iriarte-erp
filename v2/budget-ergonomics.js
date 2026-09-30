@@ -10,8 +10,8 @@ function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&l
 function canonicalState(p){const v=String(p?.phase||p?.estado||p?.status||'borrador').toLowerCase();if(v.includes('acept'))return'aceptado';if(v.includes('envi'))return'enviado';if(v.includes('rech'))return'rechazado';if(v.includes('anul'))return'anulado';return'borrador'}
 function stateLabel(p){return ({borrador:'Borrador',enviado:'Enviado',aceptado:'Aceptado',rechazado:'Rechazado',anulado:'Anulado'})[canonicalState(p)]||'Borrador'}
 function refreshSelected(id,focusLast=false){setTimeout(()=>{const item=document.querySelector(`[data-budget-item="${CSS.escape(String(id))}"]`);if(item)item.click();if(focusLast)setTimeout(()=>{const lines=$$('[data-line]');lines.at(-1)?.querySelector('[data-k="description"]')?.focus()},30)},10)}
-function visibleBudget(x){const kind=(window.APP?.budgetKind||'obra')==='obra'?(x.kind||'obra')==='obra':x.kind==='honorarios';return kind&&!x.archived&&(statusFilter==='todos'||canonicalState(x)===statusFilter)}
-function nextVisible(){return (window.APP?.data?.presupuestos||[]).find(visibleBudget)||null}
+function matchesFilter(x){const kind=(window.APP?.budgetKind||'obra')==='obra'?(x.kind||'obra')==='obra':x.kind==='honorarios';return kind&&(showArchived||!x.archived)&&(statusFilter==='todos'||canonicalState(x)===statusFilter)}
+function nextVisible(){return (window.APP?.data?.presupuestos||[]).find(matchesFilter)||null}
 function totals(p){let base=0,vat=0;if((p.kind||'obra')==='honorarios'){(p.fee_lines||[]).forEach(x=>{const b=num(x.amount??x.importe),r=num(x.vat??x.ivaPct??21);base+=b;vat+=b*r/100})}else{(p.items||[]).forEach(x=>{const b=num(x.qty??x.cantidad)*num(x.price??x.precio),r=num(x.vat??x.ivaPct??21);base+=b;vat+=b*r/100})}const irpf=p.irpf_enabled?base*num(p.irpf_pct||15)/100:0;return {base,total:base+vat-irpf}}
 function nextRef(p){const project=(window.APP?.data?.proyectos||[]).find(x=>String(x.id)===String(p.proyecto_id));if(!project?.codigo)return null;let max=0;(window.APP?.data?.presupuestos||[]).filter(x=>String(x.proyecto_id||'')===String(p.proyecto_id)).forEach(x=>{const m=String(x.ref||x.numero||'').match(/-Pres\.(\d+)$/i);if(m)max=Math.max(max,Number(m[1])||0)});return `${project.codigo}-Pres.${max+1}`}
 
@@ -30,6 +30,12 @@ function ensureStatusFilters(sidebar){
  legacy.innerHTML=[['todos','Todos'],['borrador','Borrador'],['enviado','Enviado'],['aceptado','Aceptado'],['rechazado','Rechazado']].map(([k,l])=>`<button class="${statusFilter===k?'active':''}" data-budget-status-filter="${k}">${l}</button>`).join('');
 }
 function syncPhase(p){const x=$('[data-budget-field="phase"]');if(!x||x.dataset.statusSync==='1')return;x.dataset.statusSync='1';const apply=()=>{p.phase=x.value;p.status=x.value;p.estado=canonicalState({phase:x.value});decorateNow()};x.addEventListener('input',apply);x.addEventListener('change',apply)}
+function setEmptyState(empty){
+ const layout=$('.budget-layout'),main=$('.budget-main'),summary=$('.budget-summary');if(!layout||!main||!summary)return;
+ let msg=layout.querySelector('[data-budget-filter-empty]');
+ if(empty){main.hidden=true;summary.hidden=true;if(!msg){msg=document.createElement('div');msg.className='card panel empty';msg.dataset.budgetFilterEmpty='1';msg.style.gridColumn='2 / -1';msg.textContent=`No hay presupuestos ${statusFilter==='todos'?'visibles':stateLabel({phase:statusFilter}).toLowerCase()} en este filtro.`;layout.appendChild(msg)}else msg.textContent=`No hay presupuestos ${statusFilter==='todos'?'visibles':stateLabel({phase:statusFilter}).toLowerCase()} en este filtro.`}
+ else{main.hidden=false;summary.hidden=false;msg?.remove()}
+}
 function decorate(){
  clearTimeout(timer);timer=setTimeout(()=>{
    const A=window.APP;if(A?.route!=='presupuestos')return;const p=current(),head=$('.budget-main-head');
@@ -41,13 +47,14 @@ function decorate(){
 function decorateNow(){
  const A=window.APP;if(A?.route!=='presupuestos')return;
  $$('[data-budget-status-filter]').forEach(b=>b.classList.toggle('active',b.dataset.budgetStatusFilter===statusFilter));
- $$('[data-budget-item]').forEach(item=>{const p=(A.data.presupuestos||[]).find(x=>String(x.id)===String(item.dataset.budgetItem));if(!p)return;item.hidden=(p.archived&&!showArchived)||(statusFilter!=='todos'&&canonicalState(p)!==statusFilter);const sm=item.querySelector('small');if(sm)sm.innerHTML=`${esc(p.client||'')} · ${esc(stateLabel(p))}${p.archived?' · ARCHIVADO':''}`});
- if((!showArchived&&current()?.archived)||(current()&&statusFilter!=='todos'&&canonicalState(current())!==statusFilter)){const n=nextVisible();if(n){A.sel.budget=n.id;refreshSelected(n.id)}}
+ $$('[data-budget-item]').forEach(item=>{const p=(A.data.presupuestos||[]).find(x=>String(x.id)===String(item.dataset.budgetItem));if(!p)return;item.hidden=!matchesFilter(p);const sm=item.querySelector('small');if(sm)sm.innerHTML=`${esc(p.client||'')} · ${esc(stateLabel(p))}${p.archived?' · ARCHIVADO':''}`});
+ const next=nextVisible(),selected=current(),selectedMatches=!!selected&&matchesFilter(selected);setEmptyState(!next);
+ if(next&&!selectedMatches){A.sel.budget=next.id;refreshSelected(next.id);return}
  $$('[data-line]').forEach(row=>{if(row.querySelector('[data-budget-dup-line]'))return;const i=Number(row.dataset.line),remove=row.querySelector('[data-remove-line]');if(!remove)return;row.style.gridTemplateColumns='80px 110px minmax(220px,1fr) 120px 60px 70px 90px 65px 38px 38px';const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='⧉';b.title='Duplicar línea';b.dataset.budgetDupLine=String(i);remove.before(b);row.querySelectorAll('input').forEach(input=>input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.ctrlKey&&!e.altKey){e.preventDefault();input.dispatchEvent(new Event('input',{bubbles:true}));addLineAfter(Number(row.dataset.line))}}))});
 }
 new MutationObserver(decorate).observe(document.body,{childList:true,subtree:true});window.addEventListener('hashchange',decorate);window.addEventListener('load',decorate);
 document.addEventListener('click',e=>{
- const status=e.target.closest('[data-budget-status-filter]');if(status){e.preventDefault();e.stopImmediatePropagation();statusFilter=status.dataset.budgetStatusFilter;decorateNow();const n=nextVisible();if(n&&(!current()||current().hidden))refreshSelected(n.id);return}
+ const status=e.target.closest('[data-budget-status-filter]');if(status){e.preventDefault();e.stopImmediatePropagation();statusFilter=status.dataset.budgetStatusFilter;decorateNow();return}
  const dup=e.target.closest('[data-budget-duplicate]');if(dup){e.preventDefault();duplicateBudget();return}
  const arch=e.target.closest('[data-budget-archive]');if(arch){e.preventDefault();if(arch.dataset.budgetArchive==='restore')restoreBudget(current()?.id);else archiveBudget();return}
  const line=e.target.closest('[data-budget-dup-line]');if(line){e.preventDefault();duplicateLine(Number(line.dataset.budgetDupLine))}
