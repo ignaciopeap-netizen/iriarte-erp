@@ -14,11 +14,15 @@ jobs:
       - name: Guard draft invoice semantics
         run: |
           set -e
-          grep -q "const issued=.*borrador.*anulada" v2/project-overhead-view.js
           grep -q "const issued=.*borrador.*anulada" v2/project-hub.js
           grep -q "draftInvoices" v2/project-hub.js
           grep -qi "no cuentan como facturación" v2/project-hub.js
+          grep -q "project-profitability-panel" v2/project-hub.js
           grep -q "Solo se muestran facturas emitidas" v2/reconciliation-sync.js
           grep -q "filter(issuedInvoice)" v2/workflow-plus.js
           grep -q "Emítela antes de registrar cobros" v2/workflow-plus.js
-          echo "Draft invoices are excluded from financial KPIs and collection workflows"
+          if grep -q 'src="./project-overhead-view.js"' v2/index.html; then
+            echo "Duplicate project profitability layer must not be loaded" >&2
+            exit 1
+          fi
+          echo "Draft invoices are excluded from financial KPIs and the project has one canonical profitability panel"
