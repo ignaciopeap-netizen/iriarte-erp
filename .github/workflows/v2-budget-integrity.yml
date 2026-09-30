@@ -38,4 +38,9 @@ jobs:
           grep -q "mismo cliente" v2/budget-workflow-fix.js
           grep -q "Pendientes estructurales" v2/ux-finish.js
           grep -q "Horas sin coste imputado" v2/ux-finish.js
-          echo "Project-first budget integrity guards passed"
+          test -f v2/expenses-plus.js
+          grep -q 'src="./expenses-plus.js"' v2/index.html
+          grep -q "window.iriarteEditExpense" v2/expenses-plus.js
+          grep -q "criterio_reparto:pid?'proyecto_directo':'sin_repartir'" v2/expenses-plus.js
+          grep -q "No crea ni modifica movimientos bancarios" v2/expenses-plus.js
+          echo "Project-first and expense integrity guards passed"
