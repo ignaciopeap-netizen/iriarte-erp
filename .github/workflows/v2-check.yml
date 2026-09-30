@@ -46,6 +46,7 @@ jobs:
           fi
           grep -q 'src="./app-core.js"' v2/index.html
           grep -q 'src="./navigation-v2.js"' v2/index.html
+          grep -q 'src="./cashflow-plus.js"' v2/index.html
           if grep -q 'src="./records-route.js"' v2/index.html; then
             echo "Superseded records-route.js must not be loaded" >&2
             exit 1
@@ -74,6 +75,11 @@ jobs:
           fi
           grep -q "filter(issuedInvoice)" v2/workflow-plus.js
           grep -q "Emítela antes de registrar cobros" v2/workflow-plus.js
+          grep -q "window.iriarteEditCollection" v2/cashflow-plus.js
+          grep -q "window.iriarteEditPayment" v2/cashflow-plus.js
+          grep -q "Banco conciliado" v2/cashflow-plus.js
+          grep -Fq "open:['collection',x.id]" v2/records.js
+          grep -Fq "open:['payment',x.id]" v2/records.js
           grep -q "desconciliar_movimiento_v2" v2/finance-view-fix.js
           grep -q "data-bank-unreconcile" v2/finance-view-fix.js
           grep -q "registrado ERP" v2/finance-view-fix.js
@@ -126,7 +132,7 @@ jobs:
           pos={name:i for i,name in enumerate(scripts)}
           required=[
             'db-bridge.js','runtime-guard.js','app-core.js','navigation-v2.js','auth-recovery.js','project-actions.js','contacts-plus.js','active-contact-selectors.js','contact-hubs.js',
-            'document-upload.js','document-context.js','operations-plus.js','enhancements.js','expenses-plus.js','reconciliation-sync.js','workflow-plus.js','invoice-edit-context.js','invoice-pro.js','invoice-atomic-save.js','invoice-guard.js',
+            'document-upload.js','document-context.js','operations-plus.js','enhancements.js','expenses-plus.js','reconciliation-sync.js','workflow-plus.js','cashflow-plus.js','invoice-edit-context.js','invoice-pro.js','invoice-atomic-save.js','invoice-guard.js',
             'derived-status-guard.js','presupuestos-plus.js','budget-ergonomics.js','budget-validation.js','budget-workflow-fix.js','budget-work-view.js','budget-pdf.js',
             'project-hub.js','project-finance-guard.js','billing-phases.js','purchases-plus.js','financial-document-links.js','operations-edit.js','bank-import-complete.js',
             'finance-view-fix.js','issued-finance-ui.js','reports-plus.js','auto-open.js','record-open.js','records.js','dashboard-attention.js','ux-finish.js'
@@ -140,8 +146,8 @@ jobs:
               raise SystemExit('project-actions.js must load after app-core.js')
           if not pos['contacts-plus.js'] < pos['active-contact-selectors.js'] < pos['contact-hubs.js']:
               raise SystemExit('Contact selector/hub ordering is invalid')
-          if not pos['app-core.js'] < pos['document-upload.js'] < pos['document-context.js'] < pos['operations-plus.js'] < pos['enhancements.js'] < pos['expenses-plus.js'] < pos['reconciliation-sync.js'] < pos['workflow-plus.js']:
-              raise SystemExit('Document/Obra/expense/reconciliation ordering is invalid')
+          if not pos['app-core.js'] < pos['document-upload.js'] < pos['document-context.js'] < pos['operations-plus.js'] < pos['enhancements.js'] < pos['expenses-plus.js'] < pos['reconciliation-sync.js'] < pos['workflow-plus.js'] < pos['cashflow-plus.js'] < pos['invoice-edit-context.js']:
+              raise SystemExit('Document/Obra/expense/reconciliation/cashflow ordering is invalid')
           if not pos['invoice-edit-context.js'] < pos['invoice-pro.js'] < pos['invoice-atomic-save.js'] < pos['invoice-guard.js'] < pos['derived-status-guard.js']:
               raise SystemExit('Invoice context/save/guard ordering is invalid')
           if not pos['presupuestos-plus.js'] < pos['budget-ergonomics.js'] < pos['budget-validation.js'] < pos['budget-workflow-fix.js'] < pos['budget-work-view.js'] < pos['budget-pdf.js']:
@@ -164,6 +170,7 @@ jobs:
           test -f MIGRACION_GUARDAR_FACTURA_V2.sql
           test -f MIGRACION_CONCILIACION_V2.sql
           test -f MIGRACION_DESCONCILIACION_BANCO_V2.sql
+          test -f MIGRACION_PROTEGER_COBROS_PAGOS_BANCO_V2.sql
           test -f MIGRACION_CONTROL_INTEGRIDAD_V2.sql
           test -f MIGRACION_CONTROL_INTEGRIDAD_V2_02.sql
           test -f MIGRACION_CONTROL_INTEGRIDAD_V2_03.sql
@@ -181,6 +188,8 @@ jobs:
           grep -q "conciliar_movimiento_v2" MIGRACION_CONCILIACION_V2.sql
           grep -q "desconciliar_movimiento_v2" MIGRACION_DESCONCILIACION_BANCO_V2.sql
           grep -q "origen_importacion is null" MIGRACION_DESCONCILIACION_BANCO_V2.sql
+          grep -q "proteger_cobro_pago_bancario_v2" MIGRACION_PROTEGER_COBROS_PAGOS_BANCO_V2.sql
+          grep -q "origen_importacion is not null" MIGRACION_PROTEGER_COBROS_PAGOS_BANCO_V2.sql
           grep -q "v_control_integridad_erp" MIGRACION_CONTROL_INTEGRIDAD_V2.sql
           grep -q "documentos_factura_proyecto_incoherente" MIGRACION_CONTROL_INTEGRIDAD_V2_02.sql
           grep -q "facturas_borrador_con_cobros" MIGRACION_CONTROL_INTEGRIDAD_V2_03.sql
