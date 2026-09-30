@@ -3,15 +3,25 @@
 'use strict';
 const db=()=>window.__iriarteDb;
 const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const num=v=>Number(String(v??0).replace(',','.'))||0;
 let timer,showArchived=false;
 function current(){const A=window.APP;return A?.data?.presupuestos?.find(x=>String(x.id)===String(A?.sel?.budget))||null}
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
 function refreshSelected(id,focusLast=false){setTimeout(()=>{const item=document.querySelector(`[data-budget-item="${CSS.escape(String(id))}"]`);if(item)item.click();if(focusLast)setTimeout(()=>{const lines=$$('[data-line]');lines.at(-1)?.querySelector('[data-k="description"]')?.focus()},30)},10)}
 function nextUnarchived(){return (window.APP?.data?.presupuestos||[]).find(x=>!x.archived&&(x.kind||'obra')===(window.APP?.budgetKind||'obra'))||null}
+function totals(p){
+ let base=0,vat=0;
+ if((p.kind||'obra')==='honorarios'){
+  (p.fee_lines||[]).forEach(x=>{const b=num(x.amount??x.importe),r=num(x.vat??x.ivaPct??21);base+=b;vat+=b*r/100});
+ }else{
+  (p.items||[]).forEach(x=>{const b=num(x.qty??x.cantidad)*num(x.price??x.precio),r=num(x.vat??x.ivaPct??21);base+=b;vat+=b*r/100});
+ }
+ const irpf=p.irpf_enabled?base*num(p.irpf_pct||15)/100:0;return {base,total:base+vat-irpf}
+}
 
 async function duplicateBudget(){
  const p=current(),client=db();if(!p||!client)return;
- const project=(window.APP?.data?.proyectos||[]).find(x=>String(x.id)===String(p.proyecto_id)),count=(window.APP?.data?.presupuestos||[]).filter(x=>p.proyecto_id&&String(x.proyecto_id)===String(p.proyecto_id)).length+1,ref=p.proyecto_id&&project?.codigo?`${project.codigo}-Pres.${count}`:null;
+ const project=(window.APP?.data?.proyectos||[]).find(x=>String(x.id)===String(p.proyecto_id)),count=(window.APP?.data?.presupuestos||[]).filter(x=>p.proyecto_id&&String(x.proyecto_id)===String(p.proyecto_id)).length+1,ref=p.proyecto_id&&project?.codigo?`${project.codigo}-Pres.${count}`:null,calc=totals(p);
  const row={
   nombre:`${p.name||p.nombre||'Presupuesto'} (copia)`,name:`${p.name||p.nombre||'Presupuesto'} (copia)`,
   kind:p.kind||'obra',cliente_id:p.cliente_id||null,proyecto_id:p.proyecto_id||null,fecha:new Date().toISOString().slice(0,10),date:new Date().toISOString().slice(0,10),
@@ -19,7 +29,7 @@ async function duplicateBudget(){
   irpf_enabled:!!p.irpf_enabled,irpf_pct:Number(p.irpf_pct||0),items:structuredClone(p.items||[]),
   intro_text:p.intro_text||'',zonas:structuredClone(p.zonas||[]),scope_items:structuredClone(p.scope_items||[]),redaccion_toggle:p.redaccion_toggle!==false,
   redaccion_texto:p.redaccion_texto||'',fases_obra:structuredClone(p.fases_obra||[]),direccion_resumen:p.direccion_resumen||'',
-  fee_lines:structuredClone(p.fee_lines||[]),clausulas:structuredClone(p.clausulas||[]),base:0,total:0
+  fee_lines:structuredClone(p.fee_lines||[]),clausulas:structuredClone(p.clausulas||[]),base:calc.base,total:calc.total
  };
  try{
    const {data,error}=await client.from('presupuestos').insert(row).select('id').single();if(error)throw error;
