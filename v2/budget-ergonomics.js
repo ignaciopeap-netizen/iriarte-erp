@@ -9,11 +9,13 @@ function current(){const A=window.APP;return A?.data?.presupuestos?.find(x=>Stri
 function esc(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[m]))}
 function canonicalState(p){const v=String(p?.phase||p?.estado||p?.status||'borrador').toLowerCase();if(v.includes('acept'))return'aceptado';if(v.includes('envi'))return'enviado';if(v.includes('rech'))return'rechazado';if(v.includes('anul'))return'anulado';return'borrador'}
 function stateLabel(p){return ({borrador:'Borrador',enviado:'Enviado',aceptado:'Aceptado',rechazado:'Rechazado',anulado:'Anulado'})[canonicalState(p)]||'Borrador'}
+function filterLabel(){return statusFilter==='sin-proyecto'?'sin proyecto':statusFilter==='todos'?'visibles':stateLabel({phase:statusFilter}).toLowerCase()}
 function refreshSelected(id,focusLast=false){setTimeout(()=>{const item=document.querySelector(`[data-budget-item="${CSS.escape(String(id))}"]`);if(item)item.click();if(focusLast)setTimeout(()=>{const lines=$$('[data-line]');lines.at(-1)?.querySelector('[data-k="description"]')?.focus()},30)},10)}
-function matchesFilter(x){const kind=(window.APP?.budgetKind||'obra')==='obra'?(x.kind||'obra')==='obra':x.kind==='honorarios';return kind&&(showArchived||!x.archived)&&(statusFilter==='todos'||canonicalState(x)===statusFilter)}
+function matchesFilter(x){const kind=(window.APP?.budgetKind||'obra')==='obra'?(x.kind||'obra')==='obra':x.kind==='honorarios',filterOk=statusFilter==='todos'||(statusFilter==='sin-proyecto'?!x.proyecto_id:canonicalState(x)===statusFilter);return kind&&(showArchived||!x.archived)&&filterOk}
 function nextVisible(){return (window.APP?.data?.presupuestos||[]).find(matchesFilter)||null}
 function totals(p){let base=0,vat=0;if((p.kind||'obra')==='honorarios'){(p.fee_lines||[]).forEach(x=>{const b=num(x.amount??x.importe),r=num(x.vat??x.ivaPct??21);base+=b;vat+=b*r/100})}else{(p.items||[]).forEach(x=>{const b=num(x.qty??x.cantidad)*num(x.price??x.precio),r=num(x.vat??x.ivaPct??21);base+=b;vat+=b*r/100})}const irpf=p.irpf_enabled?base*num(p.irpf_pct||15)/100:0;return {base,total:base+vat-irpf}}
 function nextRef(p){const project=(window.APP?.data?.proyectos||[]).find(x=>String(x.id)===String(p.proyecto_id));if(!project?.codigo)return null;let max=0;(window.APP?.data?.presupuestos||[]).filter(x=>String(x.proyecto_id||'')===String(p.proyecto_id)).forEach(x=>{const m=String(x.ref||x.numero||'').match(/-Pres\.(\d+)$/i);if(m)max=Math.max(max,Number(m[1])||0)});return `${project.codigo}-Pres.${max+1}`}
+function consumeRequestedFilter(){const requested=localStorage.getItem('iriarte_budget_filter');if(!requested)return;localStorage.removeItem('iriarte_budget_filter');if(['todos','borrador','enviado','aceptado','rechazado','sin-proyecto'].includes(requested))statusFilter=requested}
 
 async function duplicateBudget(){
  const p=current(),client=db();if(!p||!client)return;const ref=nextRef(p),calc=totals(p);
@@ -25,20 +27,20 @@ async function restoreBudget(id){const client=db();if(!client||!id)return;const 
 function duplicateLine(index){const p=current();if(!p)return;p.items=p.items||[];const src=p.items[index];if(!src)return;p.items.splice(index+1,0,structuredClone(src));refreshSelected(p.id)}
 function addLineAfter(index){const p=current();if(!p)return;p.items=p.items||[];p.items.splice(index+1,0,{code:'',section:p.items[index]?.section||p.items[index]?.seccion||'',description:'',location:p.items[index]?.location||p.items[index]?.ubicacion||'',unit:p.items[index]?.unit||p.items[index]?.unidad||'ud',qty:1,price:0,vat:p.items[index]?.vat??p.items[index]?.ivaPct??21});refreshSelected(p.id,true)}
 function ensureStatusFilters(sidebar){
- const legacy=[...sidebar.querySelectorAll('.budget-tabs')].find(x=>x.querySelector('[data-budget-filter]'));if(!legacy)return;
+ const legacy=[...sidebar.querySelectorAll('.budget-tabs')].find(x=>x.querySelector('[data-budget-filter]')||x.querySelector('[data-budget-status-filter]'));if(!legacy)return;
  if(window.APP)window.APP.budgetFilter='todos';
- legacy.innerHTML=[['todos','Todos'],['borrador','Borrador'],['enviado','Enviado'],['aceptado','Aceptado'],['rechazado','Rechazado']].map(([k,l])=>`<button class="${statusFilter===k?'active':''}" data-budget-status-filter="${k}">${l}</button>`).join('');
+ legacy.innerHTML=[['todos','Todos'],['borrador','Borrador'],['enviado','Enviado'],['aceptado','Aceptado'],['rechazado','Rechazado'],['sin-proyecto','Sin proyecto']].map(([k,l])=>`<button class="${statusFilter===k?'active':''}" data-budget-status-filter="${k}">${l}</button>`).join('');
 }
 function syncPhase(p){const x=$('[data-budget-field="phase"]');if(!x||x.dataset.statusSync==='1')return;x.dataset.statusSync='1';const apply=()=>{p.phase=x.value;p.status=x.value;p.estado=canonicalState({phase:x.value});decorateNow()};x.addEventListener('input',apply);x.addEventListener('change',apply)}
 function setEmptyState(empty){
  const layout=$('.budget-layout'),main=$('.budget-main'),summary=$('.budget-summary');if(!layout||!main||!summary)return;
  let msg=layout.querySelector('[data-budget-filter-empty]');
- if(empty){main.hidden=true;summary.hidden=true;if(!msg){msg=document.createElement('div');msg.className='card panel empty';msg.dataset.budgetFilterEmpty='1';msg.style.gridColumn='2 / -1';msg.textContent=`No hay presupuestos ${statusFilter==='todos'?'visibles':stateLabel({phase:statusFilter}).toLowerCase()} en este filtro.`;layout.appendChild(msg)}else msg.textContent=`No hay presupuestos ${statusFilter==='todos'?'visibles':stateLabel({phase:statusFilter}).toLowerCase()} en este filtro.`}
+ if(empty){main.hidden=true;summary.hidden=true;if(!msg){msg=document.createElement('div');msg.className='card panel empty';msg.dataset.budgetFilterEmpty='1';msg.style.gridColumn='2 / -1';layout.appendChild(msg)}msg.textContent=`No hay presupuestos ${filterLabel()} en este filtro.`}
  else{main.hidden=false;summary.hidden=false;msg?.remove()}
 }
 function decorate(){
  clearTimeout(timer);timer=setTimeout(()=>{
-   const A=window.APP;if(A?.route!=='presupuestos')return;const p=current(),head=$('.budget-main-head');
+   const A=window.APP;if(A?.route!=='presupuestos')return;consumeRequestedFilter();const p=current(),head=$('.budget-main-head');
    if(head&&p&&!head.querySelector('[data-budget-duplicate]')){const grow=document.createElement('span');grow.style.flex='1';const dup=document.createElement('button');dup.className='btn';dup.type='button';dup.textContent='Duplicar';dup.dataset.budgetDuplicate='1';const arch=document.createElement('button');arch.className='btn danger';arch.type='button';arch.textContent=p.archived?'Restaurar':'Archivar';arch.dataset.budgetArchive=p.archived?'restore':'archive';head.append(grow,dup,arch)}
    const sidebar=$('.budget-sidebar');if(sidebar){ensureStatusFilters(sidebar);if(!sidebar.querySelector('[data-budget-archived-toggle]')){const box=document.createElement('label');box.style.cssText='display:flex;gap:7px;align-items:center;font-size:11px;color:var(--muted);margin:10px 2px 2px';box.innerHTML=`<input type="checkbox" data-budget-archived-toggle ${showArchived?'checked':''}> Mostrar archivados`;sidebar.appendChild(box);box.querySelector('input').onchange=e=>{showArchived=e.target.checked;decorateNow()}}}
    if(p)syncPhase(p);decorateNow();
@@ -47,11 +49,12 @@ function decorate(){
 function decorateNow(){
  const A=window.APP;if(A?.route!=='presupuestos')return;
  $$('[data-budget-status-filter]').forEach(b=>b.classList.toggle('active',b.dataset.budgetStatusFilter===statusFilter));
- $$('[data-budget-item]').forEach(item=>{const p=(A.data.presupuestos||[]).find(x=>String(x.id)===String(item.dataset.budgetItem));if(!p)return;item.hidden=!matchesFilter(p);const sm=item.querySelector('small');if(sm)sm.innerHTML=`${esc(p.client||'')} · ${esc(stateLabel(p))}${p.archived?' · ARCHIVADO':''}`});
+ $$('[data-budget-item]').forEach(item=>{const p=(A.data.presupuestos||[]).find(x=>String(x.id)===String(item.dataset.budgetItem));if(!p)return;item.hidden=!matchesFilter(p);const sm=item.querySelector('small');if(sm)sm.innerHTML=`${esc(p.client||'')} · ${esc(stateLabel(p))}${!p.proyecto_id?' · SIN PROYECTO':''}${p.archived?' · ARCHIVADO':''}`});
  const next=nextVisible(),selected=current(),selectedMatches=!!selected&&matchesFilter(selected);setEmptyState(!next);
  if(next&&!selectedMatches){A.sel.budget=next.id;refreshSelected(next.id);return}
  $$('[data-line]').forEach(row=>{if(row.querySelector('[data-budget-dup-line]'))return;const i=Number(row.dataset.line),remove=row.querySelector('[data-remove-line]');if(!remove)return;row.style.gridTemplateColumns='80px 110px minmax(220px,1fr) 120px 60px 70px 90px 65px 38px 38px';const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='⧉';b.title='Duplicar línea';b.dataset.budgetDupLine=String(i);remove.before(b);row.querySelectorAll('input').forEach(input=>input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.ctrlKey&&!e.altKey){e.preventDefault();input.dispatchEvent(new Event('input',{bubbles:true}));addLineAfter(Number(row.dataset.line))}}))});
 }
+window.iriarteOpenUnlinkedBudgets=function(){localStorage.setItem('iriarte_budget_filter','sin-proyecto');if(window.iriarteRoute)window.iriarteRoute('presupuestos');else location.hash='#presupuestos'};
 new MutationObserver(decorate).observe(document.body,{childList:true,subtree:true});window.addEventListener('hashchange',decorate);window.addEventListener('load',decorate);
 document.addEventListener('click',e=>{
  const status=e.target.closest('[data-budget-status-filter]');if(status){e.preventDefault();e.stopImmediatePropagation();statusFilter=status.dataset.budgetStatusFilter;decorateNow();return}
