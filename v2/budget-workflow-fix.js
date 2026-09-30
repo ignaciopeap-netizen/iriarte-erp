@@ -97,6 +97,7 @@
       alert(existing.length===1?'Este presupuesto ya tiene una factura vinculada. Se abrirá la factura existente.':`Este presupuesto ya tiene ${existing.length} facturas completas activas vinculadas. Se abrirá la más reciente para revisarlas antes de crear nada más.`);
       openInvoice(x.id,x.proyecto_id||p.proyecto_id);return;
     }
+    if(!p.proyecto_id){alert('Antes de crear una factura, vincula este presupuesto histórico a un proyecto. Así la factura, el cliente y la rentabilidad quedan dentro del mismo proyecto.');return}
     try{
       await syncCurrentBudget(p);
       const {data,error}=await client.rpc('crear_factura_desde_presupuesto_v2',{p_presupuesto_id:p.id});
@@ -112,7 +113,7 @@
     }catch(err){alert('No se pudo crear la factura desde el presupuesto:\n'+(err.message||err))}
   }
 
-  function decorate(){clearTimeout(timer);timer=setTimeout(()=>{if(window.APP?.route!=='presupuestos'||window.APP?.budgetView!=='edit')return;const p=currentBudget(),b=document.querySelector('[data-action="budget-to-project"]');if(b&&p){if(p.proyecto_id)b.style.display='none';else{b.style.display='';b.textContent='Vincular a proyecto'}}const invoice=document.querySelector('[data-action="budget-to-invoice"]');if(invoice&&p){const existing=fullInvoicesForBudget(p.id),phases=phaseInvoicesForBudget(p.id);invoice.disabled=false;if(existing.length){invoice.textContent='Abrir factura';invoice.title='Este presupuesto ya tiene una factura completa vinculada.'}else if(phases.length){invoice.textContent='Facturación por fases';invoice.title='Este presupuesto ya tiene facturas de fases. Continúa desde la ficha del proyecto.';invoice.disabled=true}else{invoice.textContent='Crear factura';invoice.title=''}}},50)}
+  function decorate(){clearTimeout(timer);timer=setTimeout(()=>{if(window.APP?.route!=='presupuestos'||window.APP?.budgetView!=='edit')return;const p=currentBudget(),b=document.querySelector('[data-action="budget-to-project"]');if(b&&p){if(p.proyecto_id)b.style.display='none';else{b.style.display='';b.textContent='Vincular a proyecto'}}const invoice=document.querySelector('[data-action="budget-to-invoice"]');if(invoice&&p){const existing=fullInvoicesForBudget(p.id),phases=phaseInvoicesForBudget(p.id);invoice.disabled=false;if(existing.length){invoice.textContent='Abrir factura';invoice.title='Este presupuesto ya tiene una factura completa vinculada.'}else if(phases.length){invoice.textContent='Facturación por fases';invoice.title='Este presupuesto ya tiene facturas de fases. Continúa desde la ficha del proyecto.';invoice.disabled=true}else if(!p.proyecto_id){invoice.textContent='Vincula proyecto antes de facturar';invoice.title='Los presupuestos históricos sin proyecto deben vincularse antes de crear una factura.';invoice.disabled=true}else{invoice.textContent='Crear factura';invoice.title=''}}},50)}
   new MutationObserver(decorate).observe(document.body,{childList:true,subtree:true});window.addEventListener('hashchange',decorate);window.addEventListener('load',decorate);
   document.addEventListener('click',e=>{
     const b=e.target.closest('[data-action]');if(!b)return;
