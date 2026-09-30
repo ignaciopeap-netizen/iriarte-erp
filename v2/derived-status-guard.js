@@ -16,7 +16,7 @@ function invoice(){
    return;
  }
  const stale=['parcialmente_cobrada','cobrada'].includes(current),selected=stale?'emitida':current;
- ['borrador','emitida','vencida','anulada'].forEach(v=>s.appendChild(option(v,v,v===selected));
+ ['borrador','emitida','vencida','anulada'].forEach(v=>s.appendChild(option(v,v,v===selected)));
  note(s,stale?'El estado de cobro anterior no tiene cobros que lo respalden. Al guardar se normalizará como emitida. Los estados de cobro son siempre automáticos.':'Los estados “parcialmente cobrada” y “cobrada” se calculan automáticamente a partir de los cobros registrados.');
 }
 function purchaseEdit(){
