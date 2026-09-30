@@ -1,6 +1,6 @@
 -- Iriarte ERP V2
--- El contador de presupuestos pendientes deja de depender del antiguo status='proyecto'.
--- Cuenta cualquier presupuesto no archivado que todavía no esté vinculado a un proyecto.
+-- Control de integridad alineado con la arquitectura Proyecto -> Presupuesto -> operación.
+-- Los pendientes históricos se señalan, pero no se corrigen automáticamente.
 
 create or replace view public.v_control_integridad_erp
 with (security_invoker=true)
@@ -24,9 +24,13 @@ with inv as (
   from public.compras c
 )
 select
+  (select count(*) from public.proyectos where cliente_id is null)::integer as proyectos_sin_cliente,
+  (select count(*) from public.proyectos where nullif(trim(coalesce(codigo,'')),'') is null)::integer as proyectos_sin_codigo,
+  (select count(*) from public.presupuestos where proyecto_id is null and coalesce(archived,false)=false)::integer as presupuestos_proyecto_sin_vinculo,
   (select count(*) from public.facturas where proyecto_id is null)::integer as facturas_sin_proyecto,
   (select count(*) from public.compras where proyecto_id is null)::integer as compras_sin_proyecto,
   (select count(*) from public.horas_proyecto where proyecto_id is null)::integer as horas_sin_proyecto,
+  (select count(*) from public.horas_proyecto where coalesce(horas,0)>0 and coalesce(coste_hora,0)<=0)::integer as horas_coste_cero,
   (select count(*) from public.documentos where proyecto_id is null)::integer as documentos_sin_proyecto,
   (select count(*) from public.movimientos_financieros where conciliado=true and proyecto_id is null)::integer as movimientos_sin_proyecto,
   (select count(*) from inv where total=0 and lineas>0)::integer as facturas_total_cero_con_lineas,
@@ -34,7 +38,6 @@ select
   (select count(*) from pur where estado='pagada' and pagado+0.01<total)::integer as compras_pagadas_incoherentes,
   (select count(*) from public.presupuesto_fases_facturacion where estado='facturada' and factura_id is null)::integer as fases_facturadas_sin_factura,
   (select count(*) from public.presupuesto_fases_facturacion where factura_id is not null and estado <> all(array['pendiente','facturada','cobrada','anulada']))::integer as fases_con_factura_estado_incoherente,
-  (select count(*) from public.presupuestos where proyecto_id is null and coalesce(archived,false)=false)::integer as presupuestos_proyecto_sin_vinculo,
   (select count(*) from public.obra_visitas where project_id is null)::integer as visitas_sin_proyecto,
   (select count(*) from public.obra_tareas where project_id is null)::integer as tareas_sin_proyecto,
   (select count(*) from public.obra_incidencias where project_id is null)::integer as incidencias_sin_proyecto,
