@@ -6,20 +6,18 @@ function option(value,label=value,selected=false){const o=document.createElement
 function note(select,text){const label=select.closest('label');if(!label)return;let n=label.querySelector('[data-derived-state-note]');if(!n){n=document.createElement('small');n.dataset.derivedStateNote='1';n.style.cssText='display:block;margin-top:5px;color:var(--muted);line-height:1.35';label.appendChild(n)}n.textContent=text}
 function invoice(){
  const form=document.querySelector('#invoice-pro-form');if(!form||form.dataset.stateGuard==='1')return;form.dataset.stateGuard='1';
- const s=form.elements.estado;if(!s)return;const current=s.value,fid=window.__iriarteEditingInvoiceId||null;
- const hasCollections=!!fid&&(window.APP?.data?.cobros||[]).some(x=>String(x.factura_id)===String(fid));
- s.innerHTML='';
+ const s=form.elements.estado;if(!s)return;const current=String(s.value||'borrador').toLowerCase(),fid=window.__iriarteEditingInvoiceId||null;
+ const collections=!!fid?(window.APP?.data?.cobros||[]).filter(x=>String(x.factura_id)===String(fid)):[];
+ const hasCollections=collections.length>0;s.innerHTML='';
  if(hasCollections){
-   s.appendChild(option(current,current.replaceAll('_',' '),true));
+   const derived=['parcialmente_cobrada','cobrada'].includes(current)?current:'parcialmente_cobrada';
+   s.appendChild(option(derived,derived.replaceAll('_',' '),true));
    note(s,'Esta factura tiene cobros registrados. Su estado de cobro se calcula automáticamente y no puede anularse mientras esos cobros sigan vinculados.');
    return;
  }
- if(['parcialmente_cobrada','cobrada'].includes(current)){
-   s.appendChild(option(current,current.replaceAll('_',' '),true));
- }else{
-   ['borrador','emitida','vencida','anulada'].forEach(v=>s.appendChild(option(v,v,v===current)));
- }
- note(s,'Los estados “parcialmente cobrada” y “cobrada” se calculan automáticamente a partir de los cobros registrados.');
+ const stale=['parcialmente_cobrada','cobrada'].includes(current),selected=stale?'emitida':current;
+ ['borrador','emitida','vencida','anulada'].forEach(v=>s.appendChild(option(v,v,v===selected));
+ note(s,stale?'El estado de cobro anterior no tiene cobros que lo respalden. Al guardar se normalizará como emitida. Los estados de cobro son siempre automáticos.':'Los estados “parcialmente cobrada” y “cobrada” se calculan automáticamente a partir de los cobros registrados.');
 }
 function purchaseEdit(){
  const form=document.querySelector('#c-form');if(!form||form.dataset.stateGuard==='1')return;form.dataset.stateGuard='1';
