@@ -16,6 +16,7 @@ jobs:
           set -e
           test -f MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql
           test -f MIGRACION_CONTROL_INTEGRIDAD_PRESUPUESTOS_V2.sql
+          test -f MIGRACION_VALIDACION_PROYECTO_V2.sql
           grep -q "Antes de facturar, vincula el presupuesto a un proyecto" MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql
           if grep -qi "insert into public.proyectos\|update public.presupuestos" MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql; then
             echo "Invoice creation must not create projects or mutate the source budget" >&2
@@ -24,4 +25,12 @@ jobs:
           grep -q "proyecto_id is null" MIGRACION_CONTROL_INTEGRIDAD_PRESUPUESTOS_V2.sql
           grep -q "coalesce(archived,false)=false" MIGRACION_CONTROL_INTEGRIDAD_PRESUPUESTOS_V2.sql
           grep -q "security_invoker=true" MIGRACION_CONTROL_INTEGRIDAD_PRESUPUESTOS_V2.sql
+          grep -q "Todo proyecto debe estar vinculado a un cliente" MIGRACION_VALIDACION_PROYECTO_V2.sql
+          grep -q "Todo proyecto debe tener un código" MIGRACION_VALIDACION_PROYECTO_V2.sql
+          if grep -Eq "from\('proyectos'\)\.(insert|update)" v2/budget-workflow-fix.js; then
+            echo "Budget workflow must link existing projects, not create or edit the project master" >&2
+            exit 1
+          fi
+          grep -q "Vincular a proyecto existente" v2/budget-workflow-fix.js
+          grep -q "mismo cliente" v2/budget-workflow-fix.js
           echo "Project-first budget integrity guards passed"
