@@ -1,0 +1,27 @@
+name: V2 budget integrity
+
+on:
+  push:
+    branches: [unified-v2]
+  pull_request:
+    branches: [main]
+
+jobs:
+  budget-integrity:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Guard project-first invoicing and orphan-budget control
+        run: |
+          set -e
+          test -f MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql
+          test -f MIGRACION_CONTROL_INTEGRIDAD_PRESUPUESTOS_V2.sql
+          grep -q "Antes de facturar, vincula el presupuesto a un proyecto" MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql
+          if grep -qi "insert into public.proyectos\|update public.presupuestos" MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql; then
+            echo "Invoice creation must not create projects or mutate the source budget" >&2
+            exit 1
+          fi
+          grep -q "proyecto_id is null" MIGRACION_CONTROL_INTEGRIDAD_PRESUPUESTOS_V2.sql
+          grep -q "coalesce(archived,false)=false" MIGRACION_CONTROL_INTEGRIDAD_PRESUPUESTOS_V2.sql
+          grep -q "security_invoker=true" MIGRACION_CONTROL_INTEGRIDAD_PRESUPUESTOS_V2.sql
+          echo "Project-first budget integrity guards passed"
