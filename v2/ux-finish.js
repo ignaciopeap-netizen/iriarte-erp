@@ -19,13 +19,18 @@ function applyContext(){
  bar.querySelector('[data-open]').onclick=()=>window.iriarteRoute&&window.iriarteRoute('proyectos');bar.querySelector('[data-clear]').onclick=async()=>{S.sel.project='';if(window.reloadIriarte)await window.reloadIriarte()};
 }
 function applyFinanceActions(){
- if(window.APP?.route!=='informes')return;
+ const S=window.APP;if(S?.route!=='informes')return;
  const small=[...document.querySelectorAll('#reports-v2 .info small')].find(x=>x.textContent.trim()==='Presupuestos pendientes de vincular a proyecto');
- const info=small?.closest('.info');if(!info||info.querySelector('[data-ux-unlinked-budgets]'))return;
- const count=Number(info.querySelector('b')?.textContent||0);if(!count)return;
- const b=document.createElement('button');b.type='button';b.className='btn';b.dataset.uxUnlinkedBudgets='1';b.textContent='Revisar presupuestos sin proyecto';b.style.marginTop='8px';
- b.onclick=()=>{if(typeof window.iriarteOpenUnlinkedBudgets==='function')window.iriarteOpenUnlinkedBudgets();else{localStorage.setItem('iriarte_budget_filter','sin-proyecto');window.iriarteRoute?.('presupuestos')}};
- info.appendChild(b);
+ const info=small?.closest('.info');if(info&&!info.querySelector('[data-ux-unlinked-budgets]')){const count=Number(info.querySelector('b')?.textContent||0);if(count){const b=document.createElement('button');b.type='button';b.className='btn';b.dataset.uxUnlinkedBudgets='1';b.textContent='Revisar presupuestos sin proyecto';b.style.marginTop='8px';b.onclick=()=>{if(typeof window.iriarteOpenUnlinkedBudgets==='function')window.iriarteOpenUnlinkedBudgets();else{localStorage.setItem('iriarte_budget_filter','sin-proyecto');window.iriarteRoute?.('presupuestos')}};info.appendChild(b)}}
+ const projects=(S.data.proyectos||[]).filter(x=>!x.cliente_id),zeroHours=(S.data.horas||[]).filter(x=>Number(x.horas||0)>0&&Number(x.coste_hora||0)<=0);
+ let box=$('#ux-structural-integrity');
+ if(!projects.length&&!zeroHours.length){box?.remove();return}
+ if(!box){box=document.createElement('section');box.id='ux-structural-integrity';box.className='card panel';const integrity=[...document.querySelectorAll('#reports-v2 .card.panel')].find(x=>x.querySelector('h3')?.textContent.trim()==='Control de integridad');if(integrity)integrity.after(box);else document.querySelector('#reports-v2')?.appendChild(box)}
+ if(!box)return;
+ box.innerHTML=`<h3>Pendientes estructurales</h3><div class="notice" style="background:#fff2d8;color:#745b24"><b>${projects.length+zeroHours.length} pendiente${projects.length+zeroHours.length===1?'':'s'} de estructura o coste.</b> No se modifica ningún dato automáticamente.</div><div class="grid cols-2" style="margin-top:10px">${projects.length?`<div class="info"><small>Proyectos sin cliente</small><b class="negative">${projects.length}</b><div style="margin-top:7px"><button class="btn" data-ux-project-client>Revisar proyecto</button></div></div>`:''}${zeroHours.length?`<div class="info"><small>Horas sin coste imputado</small><b class="negative">${zeroHours.length}</b><div style="margin-top:7px"><button class="btn" data-ux-zero-hours>Revisar horas</button></div></div>`:''}</div>`;
+ const pb=box.querySelector('[data-ux-project-client]');if(pb)pb.onclick=()=>{S.sel.project=projects[0].id;window.iriarteRoute?.('proyectos')};
+ const hb=box.querySelector('[data-ux-zero-hours]');if(hb)hb.onclick=()=>{S.sel.project=zeroHours[0].proyecto_id||'';window.iriarteRoute?.('horas')};
+ const ok=[...document.querySelectorAll('#reports-v2 .notice')].find(x=>x.textContent.includes('Control de integridad: correcto.'));if(ok)ok.remove();
 }
 function applyMeta(){const r=labels[window.APP?.route||'inicio']||'Iriarte ERP';document.title=r+' · Iriarte ERP';document.body.classList.toggle('ux-modal-open',!!document.querySelector('.modal-backdrop'))}
 function run(){clearTimeout(timer);timer=setTimeout(()=>{applyBrand();applyContext();applyFinanceActions();applyMeta()},30)}
