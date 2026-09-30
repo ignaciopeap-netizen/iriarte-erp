@@ -63,6 +63,10 @@ jobs:
           grep -q "guardar_factura_v2" v2/invoice-atomic-save.js
           grep -q "estado de cobro anterior no tiene cobros" v2/derived-status-guard.js
           grep -q "Los estados .*cobrada.* se calculan automáticamente" v2/derived-status-guard.js
+          grep -q "derivedState" v2/purchases-plus.js
+          grep -q "Estado de pago automático" v2/purchases-plus.js
+          grep -q "Facturas con estado de cobro incoherente" v2/ux-finish.js
+          grep -q "Compras con estado de pago incoherente" v2/ux-finish.js
           grep -q "conciliar_movimiento_v2" v2/reconciliation-sync.js
           grep -q "Solo se muestran facturas emitidas" v2/reconciliation-sync.js
           if grep -q "window.iriarteReconcileMovement=reconcile" v2/workflow-plus.js; then
@@ -171,6 +175,8 @@ jobs:
           test -f MIGRACION_FACTURA_DESDE_FASE_V2.sql
           test -f MIGRACION_GUARDAR_FACTURA_V2.sql
           test -f MIGRACION_ESTADO_COBRO_FACTURA_DERIVADO_V2.sql
+          test -f MIGRACION_ESTADO_PAGO_COMPRA_DERIVADO_V2.sql
+          test -f MIGRACION_CONTROL_INTEGRIDAD_ESTADOS_DERIVADOS_V2.sql
           test -f MIGRACION_CONCILIACION_V2.sql
           test -f MIGRACION_DESCONCILIACION_BANCO_V2.sql
           test -f MIGRACION_PROTEGER_COBROS_PAGOS_BANCO_V2.sql
@@ -190,6 +196,10 @@ jobs:
           grep -q "guardar_factura_v2" MIGRACION_GUARDAR_FACTURA_V2.sql
           grep -q "validar_estado_cobro_factura_v2" MIGRACION_ESTADO_COBRO_FACTURA_DERIVADO_V2.sql
           grep -q "no puede asignarse manualmente" MIGRACION_ESTADO_COBRO_FACTURA_DERIVADO_V2.sql
+          grep -q "validar_estado_pago_compra_v2" MIGRACION_ESTADO_PAGO_COMPRA_DERIVADO_V2.sql
+          grep -q "no puede permanecer pendiente" MIGRACION_ESTADO_PAGO_COMPRA_DERIVADO_V2.sql
+          grep -q "facturas_estado_cobro_incoherente" MIGRACION_CONTROL_INTEGRIDAD_ESTADOS_DERIVADOS_V2.sql
+          grep -q "compras_estado_pago_incoherente" MIGRACION_CONTROL_INTEGRIDAD_ESTADOS_DERIVADOS_V2.sql
           grep -q "conciliar_movimiento_v2" MIGRACION_CONCILIACION_V2.sql
           grep -q "desconciliar_movimiento_v2" MIGRACION_DESCONCILIACION_BANCO_V2.sql
           grep -q "origen_importacion is null" MIGRACION_DESCONCILIACION_BANCO_V2.sql
