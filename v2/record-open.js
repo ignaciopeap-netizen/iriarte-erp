@@ -31,7 +31,7 @@ function open(type,id){
  if(!cfg)return;
  const [key,destination]=cfg;localStorage.setItem(key,String(id));
  if(type==='project'&&window.APP)window.APP.sel.project=id;
- if(type==='budget'&&window.APP){window.APP.sel.budget=id;window.APP.budgetView='edit'}
+ if(type==='budget'&&window.APP){const p=(window.APP.data?.presupuestos||[]).find(x=>String(x.id)===String(id));window.APP.budgetKind=(p?.kind||'obra')==='honorarios'?'honorarios':'obra';window.APP.sel.budget=id;window.APP.budgetView='edit'}
  route(destination);
 }
 window.iriarteOpenRecord=open;
