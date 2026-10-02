@@ -18,20 +18,23 @@ function prepareStage(sheet){
  clone.querySelectorAll('.pp-table thead').forEach(x=>{x.style.display='table-header-group'});
  clone.querySelectorAll('.pp-table tr,.pp-head,.pp-meta-grid,.pp-totals,.pp-footer').forEach(x=>{x.style.breakInside='avoid';x.style.pageBreakInside='avoid'});
  clone.querySelectorAll('.pp-section h3').forEach(x=>{x.style.breakAfter='avoid';x.style.pageBreakAfter='avoid'});
+ clone.querySelectorAll('.hon-doc-head,table tr,.hon-privacy').forEach(x=>{x.style.breakInside='avoid';x.style.pageBreakInside='avoid'});
+ clone.querySelectorAll('#honorarios-doc-v2 h3').forEach(x=>{x.style.breakAfter='avoid';x.style.pageBreakAfter='avoid'});
  stage.appendChild(clone);document.body.appendChild(stage);return stage
 }
 async function downloadPdf(button){
- const p=current(),sheet=document.querySelector('.pp-sheet');if(!p||!sheet)return;
- const supplier=window.APP?.budgetView==='supplier',pr=project(p),old=button.textContent;button.disabled=true;button.textContent='Generando PDF…';let stage;
+ const p=current(),isHonor=(p?.kind||'obra')==='honorarios',sheet=isHonor?document.querySelector('#honorarios-doc-v2'):document.querySelector('.pp-sheet');if(!p||!sheet)return;
+ const supplier=!isHonor&&window.APP?.budgetView==='supplier',pr=project(p),old=button.textContent;button.disabled=true;button.textContent='Generando PDF…';let stage;
  try{
   await ensureLibrary();stage=prepareStage(sheet);
-  const filename=safe(`${supplier?'Solicitud de precios':'Presupuesto'} - ${pr?.nombre||p.name||p.nombre||p.ref||'documento'}`)+'.pdf';
+  const label=isHonor?'Propuesta de honorarios':supplier?'Solicitud de precios':'Presupuesto';
+  const filename=safe(`${label} - ${pr?.nombre||p.name||p.nombre||p.ref||'documento'}`)+'.pdf';
   const worker=window.html2pdf().set({
     margin:[8,7,11,7],filename,
     image:{type:'jpeg',quality:.98},
     html2canvas:{scale:2,useCORS:true,backgroundColor:'#ffffff',logging:false,scrollX:0,scrollY:0,windowWidth:stage.scrollWidth},
     jsPDF:{unit:'mm',format:'a4',orientation:'portrait'},
-    pagebreak:{mode:['css','legacy'],avoid:['.pp-head','.pp-meta-grid','.pp-table tr','.pp-totals','.pp-footer']}
+    pagebreak:{mode:['css','legacy'],avoid:['.pp-head','.pp-meta-grid','.pp-table tr','.pp-totals','.pp-footer','.hon-doc-head','#honorarios-doc-v2 table tr','.hon-privacy']}
   }).from(stage.firstElementChild).toPdf();
   await worker.get('pdf').then(pdf=>{
     const pages=pdf.internal.getNumberOfPages();
@@ -43,7 +46,7 @@ async function downloadPdf(button){
  }catch(err){console.error(err);alert(err.message||'No se pudo generar el PDF.')}
  finally{if(stage)stage.remove();button.disabled=false;button.textContent=old}
 }
-function decorate(){clearTimeout(timer);timer=setTimeout(()=>{if(window.APP?.route!=='presupuestos'||!['client','supplier'].includes(window.APP?.budgetView))return;const actions=document.querySelector('#pp-print-actions');if(!actions||actions.querySelector('[data-direct-budget-pdf]'))return;const pdf=document.createElement('button');pdf.type='button';pdf.className='btn primary';pdf.dataset.directBudgetPdf='1';pdf.textContent='Descargar PDF';actions.prepend(pdf)},40)}
+function decorate(){clearTimeout(timer);timer=setTimeout(()=>{if(window.APP?.route!=='presupuestos'||!['client','supplier'].includes(window.APP?.budgetView))return;const p=current(),isHonor=(p?.kind||'obra')==='honorarios';if(isHonor&&window.APP?.budgetView!=='client')return;const actions=document.querySelector(isHonor?'#h-print-actions':'#pp-print-actions');if(!actions||actions.querySelector('[data-direct-budget-pdf]'))return;const pdf=document.createElement('button');pdf.type='button';pdf.className='btn primary';pdf.dataset.directBudgetPdf='1';pdf.textContent='Descargar PDF';actions.prepend(pdf)},40)}
 new MutationObserver(decorate).observe(document.body,{childList:true,subtree:true});window.addEventListener('load',decorate);window.addEventListener('hashchange',decorate);
 document.addEventListener('click',e=>{const b=e.target.closest('[data-direct-budget-pdf]');if(!b)return;e.preventDefault();downloadPdf(b)},true);
 })();
