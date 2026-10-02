@@ -111,6 +111,9 @@ jobs:
             exit 1
           fi
           grep -q "Listado sin precios — Estudio de Jardinería y Paisajismo Sonsoles Pérez Iriarte" v2/presupuestos-plus.js
+          grep -q "function grandTotal(p)" v2/honorarios-plus.js
+          grep -q "iva_pct:effectiveVatPct(p),total:grandTotal(p)" v2/honorarios-plus.js
+          grep -q "Total fiscal" v2/honorarios-plus.js
           if grep -q "data-pp-client\|data-pp-supplier" v2/presupuestos-plus.js; then
             echo "Trabajo must not duplicate client/supplier output controls" >&2
             exit 1
