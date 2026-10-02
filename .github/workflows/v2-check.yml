@@ -138,6 +138,9 @@ jobs:
             exit 1
           fi
           grep -q "renderIriarteRecords" v2/records.js
+          grep -q "budgetKind=(p?.kind||\x27obra\x27)===\x27honorarios\x27" v2/record-open.js
+          grep -q "iriarte_open_budget" v2/auto-open.js
+          grep -q "window.APP.budgetKind!==kind" v2/auto-open.js
           grep -q "columnsFor" v2/records.js
           echo "Canonical V2 schema and workflow guards passed"
       - name: Guard critical module loading
