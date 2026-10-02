@@ -121,8 +121,8 @@ jobs:
           grep -q "iva_pct:effectiveVatPct(p),total:grandTotal(p)" v2/honorarios-plus.js
           grep -q "Total fiscal" v2/honorarios-plus.js
           grep -q "id=\\\"h-print-actions\\\"" v2/honorarios-plus.js
-          grep -q "supplierBtn.style.display=\x27none\x27" v2/honorarios-plus.js
-          grep -q "clientBtn.textContent=\x27Vista propuesta\x27" v2/honorarios-plus.js
+          grep -Fq "supplierBtn.style.display='none'" v2/honorarios-plus.js
+          grep -Fq "clientBtn.textContent='Vista propuesta'" v2/honorarios-plus.js
           grep -q "Propuesta de honorarios" v2/budget-pdf.js
           grep -q "#h-print-actions" v2/budget-pdf.js
           if grep -q "data-pp-client\|data-pp-supplier" v2/presupuestos-plus.js; then
@@ -140,7 +140,7 @@ jobs:
             exit 1
           fi
           grep -q "renderIriarteRecords" v2/records.js
-          grep -q "budgetKind=(p?.kind||\x27obra\x27)===\x27honorarios\x27" v2/record-open.js
+          grep -Fq "budgetKind=(p?.kind||'obra')==='honorarios'" v2/record-open.js
           grep -q "iriarte_open_budget" v2/auto-open.js
           grep -q "window.APP.budgetKind!==kind" v2/auto-open.js
           grep -q "columnsFor" v2/records.js
