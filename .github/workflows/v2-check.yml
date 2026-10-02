@@ -121,6 +121,8 @@ jobs:
           grep -q "iva_pct:effectiveVatPct(p),total:grandTotal(p)" v2/honorarios-plus.js
           grep -q "Total fiscal" v2/honorarios-plus.js
           grep -q "id=\\\"h-print-actions\\\"" v2/honorarios-plus.js
+          grep -q "supplierBtn.style.display=\x27none\x27" v2/honorarios-plus.js
+          grep -q "clientBtn.textContent=\x27Vista propuesta\x27" v2/honorarios-plus.js
           grep -q "Propuesta de honorarios" v2/budget-pdf.js
           grep -q "#h-print-actions" v2/budget-pdf.js
           if grep -q "data-pp-client\|data-pp-supplier" v2/presupuestos-plus.js; then
