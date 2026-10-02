@@ -59,6 +59,12 @@ jobs:
           grep -q "from('proyectos')" v2/project-actions.js
           grep -q "crear_factura_desde_presupuesto_v2" v2/budget-workflow-fix.js
           grep -q "Vincula proyecto antes de facturar" v2/budget-workflow-fix.js
+          grep -q "window.iriarteOpenNewBudget=openNewBudget" v2/budget-workflow-fix.js
+          grep -q "iriarteOpenNewBudget" v2/app-core.js
+          if grep -q "const row={nombre:\x27Nuevo presupuesto\x27" v2/app-core.js; then
+            echo "app-core.js must not retain a direct orphan-budget creation fallback" >&2
+            exit 1
+          fi
           grep -q "crear_factura_desde_fase_v2" v2/billing-phases.js
           grep -q "guardar_factura_v2" v2/invoice-atomic-save.js
           grep -q "estado de cobro anterior no tiene cobros" v2/derived-status-guard.js
