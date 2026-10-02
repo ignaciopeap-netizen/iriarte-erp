@@ -1,0 +1,96 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Iriarte ERP V2 · Revisión pública</title>
+  <!-- Revisión pública fijada al commit 82aeb66e24dfe9318f09c2354317bcb179188014 -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/styles.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/forms.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/honorarios.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/polish.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/finish.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/dashboard-attention.css">
+</head>
+<body>
+  <div id="auth-screen" class="auth-screen">
+    <form id="login-form" class="auth-card">
+      <p class="eyebrow">Sonsoles Pérez Iriarte</p>
+      <h1>Iriarte ERP</h1>
+      <label>Email<input id="login-email" type="email" autocomplete="username" required></label>
+      <label>Contraseña<input id="login-password" type="password" autocomplete="current-password" required></label>
+      <div id="login-error" class="error"></div>
+      <button class="btn primary" type="submit">Entrar</button>
+    </form>
+  </div>
+
+  <div id="app-shell" class="shell hidden">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-mark">SPI</div>
+        <div><strong>Sonsoles Pérez Iriarte</strong><small>JARDINERÍA Y PAISAJISMO</small></div>
+      </div>
+      <nav id="main-nav" class="main-nav"></nav>
+      <div class="userbox"><span id="user-name"></span><button id="logout-btn" class="link-button">Salir</button></div>
+    </header>
+    <main id="app-view" class="app-view"></main>
+  </div>
+
+  <div id="modal-root"></div>
+  <div id="toast" class="toast"></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/brand-data.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/print-logo-inject.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/db-bridge.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/runtime-guard.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/app-core.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/navigation-v2.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/auth-recovery.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/project-actions.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/contacts-plus.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/active-contact-selectors.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/contact-hubs.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/document-upload.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/document-context.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/operations-plus.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/enhancements.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/expenses-plus.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/reconciliation-sync.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/workflow-plus.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/cashflow-plus.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/invoice-edit-context.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/invoice-pro.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/relational-ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/invoice-atomic-save.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/invoice-guard.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/derived-status-guard.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/presupuestos-plus.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/honorarios-plus.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/honorarios-cleanup.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/budget-export.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/budget-ergonomics.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/budget-validation.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/budget-workflow-fix.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/budget-work-view.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/budget-pdf.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/project-hub.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/project-finance-guard.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/billing-phases.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/purchases-plus.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/purchase-validation.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/financial-document-links.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/operations-edit.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/obra-photos.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/bank-import-complete.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/finance-view-fix.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/issued-finance-ui.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/reports-plus.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/data-quality.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/auto-open.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/record-open.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/records.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/dashboard-attention.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@82aeb66e24dfe9318f09c2354317bcb179188014/v2/ux-finish.js"></script>
+</body>
+</html>
