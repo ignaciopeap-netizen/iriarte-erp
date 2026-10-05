@@ -22,6 +22,7 @@ jobs:
           node --check v2/analytic-costs.js
           node --check v2/analytics-integrity.js
           node --check v2/monthly-review.js
+          node --check v2/bank-month-focus.js
           node --check v2/bank-classification-memory.js
           node --check v2/records-v4.js
           node --check v2/finance-view-fix.js
@@ -69,6 +70,16 @@ jobs:
           grep -q "crear_coste_personal_desde_movimiento_v2" v2/finance-view-fix.js
           grep -q "Movimientos directos de banco" v2/analytic-costs.js
           grep -q "Resultado analítico ampliado" v2/analytic-costs.js
+      - name: Guard Bank monthly focus
+        run: |
+          set -e
+          grep -q "data-bank-month-focus" v2/bank-month-focus.js
+          grep -q "iriarte_bank_focus_month" v2/bank-month-focus.js
+          grep -q "data-mr-bank" v2/bank-month-focus.js
+          if grep -q "\.from(" v2/bank-month-focus.js || grep -q "rpc(" v2/bank-month-focus.js; then
+            echo "Bank monthly focus must remain a visual filter only" >&2
+            exit 1
+          fi
       - name: Guard classification memory
         run: |
           set -e
@@ -109,12 +120,12 @@ jobs:
           html=Path('v2/index.html').read_text(encoding='utf-8')
           scripts=re.findall(r'<script src="\./([^"]+)"></script>',html)
           pos={name:i for i,name in enumerate(scripts)}
-          required=['operations-edit.js','hours-self-service.js','finance-view-fix.js','bank-classification-memory.js','reports-plus.js','personnel-costs-v2.js','analytic-costs.js','analytics-integrity.js','monthly-review.js','records.js','records-v4.js','dashboard-attention.js','dashboard-monthly-review.js']
+          required=['operations-edit.js','hours-self-service.js','finance-view-fix.js','bank-month-focus.js','bank-classification-memory.js','reports-plus.js','personnel-costs-v2.js','analytic-costs.js','analytics-integrity.js','monthly-review.js','records.js','records-v4.js','dashboard-attention.js','dashboard-monthly-review.js']
           missing=[x for x in required if x not in pos]
           if missing: raise SystemExit('Missing analytical modules: '+', '.join(missing))
           if not pos['operations-edit.js'] < pos['hours-self-service.js']:
               raise SystemExit('Quick hours must load after operational editing')
-          if not pos['finance-view-fix.js'] < pos['bank-classification-memory.js'] < pos['reports-plus.js'] < pos['personnel-costs-v2.js'] < pos['analytic-costs.js'] < pos['analytics-integrity.js'] < pos['monthly-review.js']:
+          if not pos['finance-view-fix.js'] < pos['bank-month-focus.js'] < pos['bank-classification-memory.js'] < pos['reports-plus.js'] < pos['personnel-costs-v2.js'] < pos['analytic-costs.js'] < pos['analytics-integrity.js'] < pos['monthly-review.js']:
               raise SystemExit('Finance/personnel analytical module order is invalid')
           if not pos['records.js'] < pos['records-v4.js']:
               raise SystemExit('Records compatibility layer must load before V4')
