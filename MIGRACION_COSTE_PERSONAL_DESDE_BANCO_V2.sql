@@ -20,6 +20,7 @@ begin
   select * into m from public.movimientos_financieros where id=p_movimiento_id for update;
   if not found then raise exception 'Movimiento no encontrado'; end if;
   if m.origen_importacion is null then raise exception 'El movimiento debe proceder de una importación bancaria'; end if;
+  if lower(coalesce(m.tipo,'')) not in ('pago','gasto') then raise exception 'Un coste de personal debe proceder de una salida bancaria'; end if;
   if m.factura_id is not null or m.compra_id is not null or m.cobro_id is not null or m.pago_id is not null then raise exception 'Este movimiento ya está vinculado a un documento financiero'; end if;
   if exists(select 1 from public.costes_personal_mensuales c where c.movimiento_financiero_id=m.id) then raise exception 'Este movimiento ya tiene un coste mensual de personal asociado'; end if;
   v_importe:=abs(coalesce(m.total,m.importe,0));
