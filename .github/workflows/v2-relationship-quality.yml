@@ -1,0 +1,39 @@
+name: V2 relationship quality
+
+on:
+  push:
+    branches: [unified-v2]
+  pull_request:
+    branches: [main]
+
+jobs:
+  relationship-quality:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax
+        run: node --check v2/relationship-quality.js
+      - name: Guard explicit safe resolution
+        run: |
+          set -e
+          grep -q "data-rq-resolve" v2/relationship-quality.js
+          grep -q "linkedClientIds" v2/relationship-quality.js
+          grep -q "El proyecto seleccionado pertenece a otro cliente" v2/relationship-quality.js
+          grep -q "cliente_id:project.cliente_id" v2/relationship-quality.js
+          grep -q "Archivar borrador" v2/relationship-quality.js
+          grep -q "confirm('Archivar este borrador" v2/relationship-quality.js
+          grep -q "No se corrigen automáticamente" v2/relationship-quality.js
+      - name: Guard module load
+        run: |
+          set -e
+          grep -q '<script src="./relationship-quality.js"></script>' v2/index.html
+          python - <<'PY'
+          from pathlib import Path
+          html=Path('v2/index.html').read_text(encoding='utf-8')
+          if html.index('./data-quality.js') > html.index('./relationship-quality.js'):
+              raise SystemExit('relationship-quality.js must load after data-quality.js')
+          print('Relationship quality load order is correct')
+          PY
