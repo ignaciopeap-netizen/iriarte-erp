@@ -94,6 +94,9 @@ jobs:
           grep -q "Costes de personal abiertos" v2/monthly-review.js
           grep -Fq "Banco N · no estudio" v2/monthly-review.js
           grep -q "Mes listo para revisión final" v2/monthly-review.js
+          grep -q "data-mr-bank" v2/monthly-review.js
+          grep -q "data-mr-personnel" v2/monthly-review.js
+          grep -q "iriarte_personnel_month" v2/monthly-review.js
       - name: Guard module loading order
         run: |
           python - <<'PY'
