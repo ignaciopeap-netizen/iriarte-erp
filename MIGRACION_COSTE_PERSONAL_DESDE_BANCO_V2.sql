@@ -23,7 +23,7 @@ begin
   if lower(coalesce(m.tipo,'')) not in ('pago','gasto') then raise exception 'Un coste de personal debe proceder de una salida bancaria'; end if;
   if m.factura_id is not null or m.compra_id is not null or m.cobro_id is not null or m.pago_id is not null then raise exception 'Este movimiento ya está vinculado a un documento financiero'; end if;
   if exists(select 1 from public.costes_personal_mensuales c where c.movimiento_financiero_id=m.id) then raise exception 'Este movimiento ya tiene un coste mensual de personal asociado'; end if;
-  v_importe:=abs(coalesce(m.total,m.importe,0));
+  v_importe:=abs(coalesce(m.total,0));
   if v_importe<=0 then raise exception 'El movimiento no tiene un importe válido'; end if;
   v_periodo:=date_trunc('month',m.fecha)::date;
   insert into public.costes_personal_mensuales(periodo,persona,tipo,concepto,importe,movimiento_financiero_id,metodo_reparto,estado)
