@@ -50,5 +50,5 @@ function quickEntry(p){
 document.addEventListener('click',e=>{const button=e.target.closest('[data-work-add-section]');if(!button)return;e.preventDefault();const form=$('#budget-line-entry');if(form){form.elements.section.value=button.dataset.workAddSection;form.elements.section.dispatchEvent(new Event('change',{bubbles:true}));form.scrollIntoView?.({block:'nearest'});form.elements.description.focus()}});
 
 function enhance(){clearTimeout(timer);timer=setTimeout(()=>{const A=window.APP,p=current();if(A?.route!=='presupuestos'||A.budgetView!=='edit'||!p||(p.kind||'obra')!=='obra')return;styles();labelMeta(p);moveImportAction();positionOptions();ensureScroll();quickEntry(p);ensureLineCells();renderHeadings(p);refreshTotals(p)},75)}
-new MutationObserver(enhance).observe(document.body,{childList:true,subtree:true});window.addEventListener('hashchange',enhance);window.addEventListener('load',enhance);
+new MutationObserver(enhance).observe(document.body,{childList:true,subtree:true});window.addEventListener('hashchange',enhance);window.addEventListener('load',enhance);window.addEventListener('resize',enhance);
 })();
