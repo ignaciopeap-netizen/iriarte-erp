@@ -17,7 +17,8 @@ async function render(force=false){
  card.title=total?'Abrir los bloqueos pendientes de la revisión mensual':'Abrir la revisión mensual';
  card.onclick=()=>{localStorage.setItem('iriarte_review_month',month);if(window.iriarteRoute)window.iriarteRoute('informes');else location.hash='#informes';setTimeout(()=>document.querySelector('[data-monthly-review]')?.scrollIntoView({behavior:'smooth',block:'start'}),160)}
 }
-function schedule(){clearTimeout(timer);timer=setTimeout(()=>render(false),90)}
-new MutationObserver(schedule).observe(document.documentElement,{childList:true,subtree:true});document.addEventListener('DOMContentLoaded',schedule);window.addEventListener('hashchange',schedule);document.addEventListener('iriarte:route',schedule);
+function schedule(force=false){clearTimeout(timer);timer=setTimeout(()=>render(force),90)}
+function refreshOnRoute(){cache=null;schedule(true)}
+new MutationObserver(()=>schedule(false)).observe(document.documentElement,{childList:true,subtree:true});document.addEventListener('DOMContentLoaded',()=>schedule(true));window.addEventListener('hashchange',refreshOnRoute);document.addEventListener('iriarte:route',refreshOnRoute);
 window.iriarteRefreshDashboardMonthlyReview=()=>{cache=null;return render(true)};
 })();
