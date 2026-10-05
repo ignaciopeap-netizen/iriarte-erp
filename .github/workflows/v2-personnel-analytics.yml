@@ -1,0 +1,75 @@
+name: V2 personnel analytics
+
+on:
+  push:
+    branches: [unified-v2]
+  pull_request:
+    branches: [main]
+
+jobs:
+  personnel-analytics:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Syntax of analytical modules
+        run: |
+          set -e
+          node --check v2/personnel-costs-v2.js
+          node --check v2/hours-self-service.js
+          node --check v2/analytic-costs.js
+          node --check v2/records-v3.js
+          node --check v2/finance-view-fix.js
+      - name: Guard personnel allocation engine
+        run: |
+          set -e
+          test -f MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
+          test -f MIGRACION_GUARDAR_IMPUTACIONES_COSTE_PERSONAL_V2.sql
+          grep -q "costes_personal_mensuales" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
+          grep -q "costes_personal_imputaciones" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
+          grep -q "recalcular_imputaciones_coste_personal_v2" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
+          grep -q "cerrar_coste_personal_v2" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
+          grep -q "guardar_imputaciones_coste_personal_v2" MIGRACION_GUARDAR_IMPUTACIONES_COSTE_PERSONAL_V2.sql
+          grep -q "v_control_integridad_costes_personal_v2" MIGRACION_GUARDAR_IMPUTACIONES_COSTE_PERSONAL_V2.sql
+          grep -q "no_estudio" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
+          grep -q "security_invoker=true" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
+          grep -q "data-pc-month" v2/personnel-costs-v2.js
+          grep -q "Guardar y añadir otra" v2/hours-self-service.js
+          grep -q "window.iriarteOpenPersonnelCost" v2/personnel-costs-v2.js
+          grep -q "Coste personal" v2/records-v3.js
+          grep -q "Imputación personal" v2/records-v3.js
+      - name: Guard analytical bank classification
+        run: |
+          set -e
+          test -f MIGRACION_CLASIFICACION_ANALITICA_BANCO_V2.sql
+          grep -q "clasificar_movimiento_bancario_v2" MIGRACION_CLASIFICACION_ANALITICA_BANCO_V2.sql
+          grep -q "no_estudio" MIGRACION_CLASIFICACION_ANALITICA_BANCO_V2.sql
+          grep -q "gasto_directo" MIGRACION_CLASIFICACION_ANALITICA_BANCO_V2.sql
+          grep -q "v_control_clasificacion_banco_v2" MIGRACION_CLASIFICACION_ANALITICA_BANCO_V2.sql
+          grep -q "data-bank-classify" v2/finance-view-fix.js
+          grep -Fq "N · No estudio" v2/finance-view-fix.js
+          grep -q "Movimientos directos de banco" v2/analytic-costs.js
+          grep -q "Resultado analítico ampliado" v2/analytic-costs.js
+      - name: Guard module loading order
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+          html=Path('v2/index.html').read_text(encoding='utf-8')
+          scripts=re.findall(r'<script src="\./([^"]+)"></script>',html)
+          pos={name:i for i,name in enumerate(scripts)}
+          required=['operations-edit.js','hours-self-service.js','finance-view-fix.js','reports-plus.js','personnel-costs-v2.js','analytic-costs.js','records.js','records-v3.js']
+          missing=[x for x in required if x not in pos]
+          if missing: raise SystemExit('Missing analytical modules: '+', '.join(missing))
+          if not pos['operations-edit.js'] < pos['hours-self-service.js']:
+              raise SystemExit('Quick hours must load after operational editing')
+          if not pos['finance-view-fix.js'] < pos['reports-plus.js'] < pos['personnel-costs-v2.js'] < pos['analytic-costs.js']:
+              raise SystemExit('Finance/personnel analytical module order is invalid')
+          if not pos['records.js'] < pos['records-v3.js']:
+              raise SystemExit('Records compatibility layer must load before V3')
+          if 'personnel-costs.js' in pos:
+              raise SystemExit('Legacy personnel-costs.js must not be loaded together with canonical V2')
+          print('Personnel analytics module order is correct')
+          PY
