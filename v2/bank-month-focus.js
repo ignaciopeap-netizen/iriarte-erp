@@ -19,5 +19,6 @@ function apply(){
 }
 function schedule(){clearTimeout(timer);timer=setTimeout(apply,90)}
 new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});window.addEventListener('load',schedule);window.addEventListener('hashchange',schedule);document.addEventListener('iriarte:route',schedule);
+document.addEventListener('click',e=>{const b=e.target.closest('[data-mr-bank]');if(!b)return;const month=document.querySelector('[data-mr-month]')?.value||localStorage.getItem('iriarte_review_month')||'';if(month)localStorage.setItem('iriarte_bank_focus_month',month)},true);
 window.iriarteFocusBankMonth=month=>{if(month)localStorage.setItem('iriarte_bank_focus_month',month);else localStorage.removeItem('iriarte_bank_focus_month');if(window.APP?.route==='finanzas')apply()};
 })();
