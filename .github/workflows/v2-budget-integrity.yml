@@ -73,4 +73,6 @@ jobs:
           grep -q "Marcado como pagado sin fecha de pago" v2/data-quality.js
           grep -q "Tiene fecha de pago pero está marcado como no pagado" v2/data-quality.js
           grep -q "La fecha de pago es anterior a la fecha del gasto" v2/data-quality.js
+          grep -q "Importe total 0" v2/data-quality.js
+          grep -q "Sin concepto ni número de factura" v2/data-quality.js
           echo "Project-first, supplier and expense integrity guards passed"
