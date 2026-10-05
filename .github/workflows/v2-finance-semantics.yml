@@ -26,3 +26,16 @@ jobs:
             exit 1
           fi
           echo "Draft invoices are excluded from financial KPIs and the project has one canonical profitability panel"
+      - name: Guard document and bank integrity semantics
+        run: |
+          set -e
+          test -f MIGRACION_INTEGRIDAD_DOCUMENTOS_GENERALES_V2.sql
+          test -f MIGRACION_INTEGRIDAD_MOVIMIENTOS_BANCO_V2.sql
+          grep -q "security_invoker=true" MIGRACION_INTEGRIDAD_DOCUMENTOS_GENERALES_V2.sql
+          grep -q "factura_id is not null or compra_id is not null or tarea_id is not null or incidencia_id is not null" MIGRACION_INTEGRIDAD_DOCUMENTOS_GENERALES_V2.sql
+          grep -q "security_invoker=true" MIGRACION_INTEGRIDAD_MOVIMIENTOS_BANCO_V2.sql
+          grep -q "categoria in ('gasto_directo','movimiento_proyecto')" MIGRACION_INTEGRIDAD_MOVIMIENTOS_BANCO_V2.sql
+          grep -q "general_estudio, coste_personal y no_estudio son válidos sin proyecto" MIGRACION_INTEGRIDAD_MOVIMIENTOS_BANCO_V2.sql
+          grep -q "heredará automáticamente su proyecto y cliente" v2/document-context.js
+          grep -q "heredará automáticamente su proyecto y proveedor" v2/document-context.js
+          echo "General documents and non-project bank classifications remain valid while operational context stays protected"
