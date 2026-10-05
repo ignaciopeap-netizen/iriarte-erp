@@ -6,6 +6,10 @@
   const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
   const num=v=>Number(String(v??0).replace(',','.'))||0;
   let timer;
+  const supplierSelections=new Map();
+  function selectedSections(p){return supplierSelections.get(String(p.id))||new Set()}
+  function supplierBudget(p){const selected=selectedSections(p);return {...p,items:(p.items||[]).filter(x=>selected.has((x.section||x.seccion||'Sin sección').trim()||'Sin sección'))}}
+  window.iriarteSupplierBudget=supplierBudget;
 
   function current(){const S=window.APP;return S?.data?.presupuestos?.find(x=>String(x.id)===String(S?.sel?.budget))}
   function projectFor(p){return (window.APP?.data?.proyectos||[]).find(x=>String(x.id)===String(p?.proyecto_id))||null}
@@ -32,16 +36,17 @@
 
   function brandHtml(){const logo=window.IRIARTE_LOGO_DATA_URI;return logo?`<img class="pp-logo" src="${logo}" alt="Sonsoles Pérez Iriarte">`:`<div><div class="pp-brand">Sonsoles Pérez Iriarte</div><div class="pp-subbrand">JARDINERÍA Y PAISAJISMO</div></div>`}
   function buildPrint(p,kind){
-    const supplier=kind==='supplier',pr=projectFor(p),cl=clientFor(p),sections=sectionOrder(p),subtitle=supplier?`${pr?.nombre||p.name||p.nombre||''}${sections.length?' — '+sections.join(', '):''}`:'Presupuesto de jardinería y paisajismo';
+    const supplier=kind==='supplier';if(supplier)p=supplierBudget(p);
+    const pr=projectFor(p),cl=clientFor(p),sections=sectionOrder(p),subtitle=supplier?`${pr?.nombre||p.name||p.nombre||''}${sections.length?' — '+sections.join(', '):''}`:'Presupuesto de jardinería y paisajismo';
     let body='';
     if(p.kind==='honorarios'){
       body=`${p.intro_text?`<div class="pp-intro">${esc(p.intro_text)}</div>`:''}<section class="pp-section"><h3>Honorarios</h3><table class="pp-table"><thead><tr><th>Concepto</th>${supplier?'':'<th class="right">Importe</th><th class="right">IVA</th><th class="right">Total c/IVA</th>'}</tr></thead><tbody>${(p.fee_lines||[]).map(x=>{const amount=num(x.amount??x.importe),rate=num(x.vat??x.ivaPct??21);return `<tr><td>${esc(x.description||x.concepto||'')}</td>${supplier?'':`<td class="right">${money(amount)}</td><td class="right">${rate}%</td><td class="right"><b>${money(amount*(1+rate/100))}</b></td>`}</tr>`}).join('')}</tbody></table></section>`;
     }else{
-      body=sections.map(sec=>{const sb=sectionBase(p,sec),sv=sectionVat(p,sec);return `<section class="pp-section"><h3>${esc(sec)}</h3><table class="pp-table"><thead><tr><th style="width:7%">Cód.</th><th style="width:6%">Ud.</th><th>Descripción</th><th style="width:20%">Ubicación</th><th class="right" style="width:9%">Unidades</th>${supplier?'':`<th class="right" style="width:11%">Precio ud.</th><th class="right" style="width:13%">Base imponible</th><th class="right" style="width:7%">IVA</th><th class="right" style="width:13%">Total c/IVA</th>`}</tr></thead><tbody>${sectionItems(p,sec).map(x=>{const q=lineQty(x),price=linePrice(x),rate=lineVat(x),b=q*price;return `<tr><td>${esc(x.code||x.codigo||'')}</td><td>${esc(x.unit||x.unidad||'')}</td><td>${esc(lineDesc(x))}</td><td class="location">${esc(x.location||x.ubicacion||'')}</td><td class="right">${q.toLocaleString('es-ES',{maximumFractionDigits:3})}</td>${supplier?'':`<td class="right">${money(price)}</td><td class="right">${money(b)}</td><td class="right">${rate.toLocaleString('es-ES',{maximumFractionDigits:2})}%</td><td class="right"><b>${money(b*(1+rate/100))}</b></td>`}</tr>`}).join('')}${supplier?'':`<tr class="subtotal"><td colspan="6">Subtotal ${esc(sec)}</td><td class="right">${money(sb)}</td><td></td><td class="right">${money(sb+sv)}</td></tr>`}</tbody></table></section>`}).join('');
+      body=sections.map(sec=>{const sb=sectionBase(p,sec),sv=sectionVat(p,sec);return `<section class="pp-section"><h3>${esc(sec)}</h3><table class="pp-table"><thead><tr><th style="width:5%">Cód.</th><th style="width:4%">Ud.</th><th>Descripción</th><th style="width:13%">Ubicación</th><th class="right" style="width:7%">Unidades</th>${supplier?'':`<th class="right" style="width:10%">Precio ud.</th><th class="right" style="width:12%">Base imponible</th><th class="right" style="width:5%">IVA</th><th class="right" style="width:12%">Total c/IVA</th>`}</tr></thead><tbody>${sectionItems(p,sec).map(x=>{const q=lineQty(x),price=linePrice(x),rate=lineVat(x),b=q*price;return `<tr><td>${esc(x.code||x.codigo||'')}</td><td>${esc(x.unit||x.unidad||'')}</td><td>${esc(lineDesc(x))}</td><td class="location">${esc(x.location||x.ubicacion||'')}</td><td class="right">${q.toLocaleString('es-ES',{maximumFractionDigits:3})}</td>${supplier?'':`<td class="right">${money(price)}</td><td class="right">${money(b)}</td><td class="right">${rate.toLocaleString('es-ES',{maximumFractionDigits:2})}%</td><td class="right"><b>${money(b*(1+rate/100))}</b></td>`}</tr>`}).join('')}${supplier?'':`<tr class="subtotal"><td colspan="6">Subtotal ${esc(sec)}</td><td class="right">${money(sb)}</td><td></td><td class="right">${money(sb+sv)}</td></tr>`}</tbody></table></section>`}).join('');
     }
-    if(!body)body='<div class="pp-empty">Este presupuesto todavía no tiene líneas.</div>';
+    if(!body)body=`<div class="pp-empty">${supplier?'Selecciona al menos una sección arriba para generar el listado.':'Este presupuesto todavía no tiene líneas.'}</div>`;
     const rates=vatByRate(p),totals=supplier?'':`<div class="pp-totals"><div><span>Base imponible</span><b>${money(base(p))}</b></div>${Object.entries(rates).sort((a,b)=>Number(a[0])-Number(b[0])).map(([rate,val])=>`<div><span>IVA (${esc(rate)}%)</span><b>${money(val)}</b></div>`).join('')}${p.irpf_enabled?`<div><span>Retención IRPF (${num(p.irpf_pct||15)}%)</span><b>− ${money(irpf(p))}</b></div>`:''}<div class="grand"><span>Total</span><b>${money(base(p)+vat(p)-irpf(p))}</b></div></div>`;
-    const meta=supplier?`<div><small>Proyecto</small><b>${esc(pr?.nombre||p.name||p.nombre||'—')}</b></div><div><small>Fecha</small><b>${esc(dateText(p))}</b></div><div><small>Ref.</small><b>${esc(pr?.codigo||p.ref||p.numero||'—')}</b></div>`:`<div><small>Cliente</small><b>${esc(cl?.nombre||p.client||'—')}</b></div><div><small>Dirección</small><b>${esc(pr?.direccion||p.address||cl?.direccion||'—')}</b></div><div><small>Fecha</small><b>${esc(dateText(p))}</b></div><div><small>Ref. proyecto</small><b>${esc(pr?.codigo||p.ref||p.numero||'—')}</b></div><div><small>Fase</small><b>${esc(phaseNumber(p))}</b></div>`;
+    const meta=supplier?`<div><small>Proyecto</small><b>${esc(pr?.nombre||p.name||p.nombre||'—')}</b></div><div><small>Fecha</small><b>${esc(dateText(p))}</b></div><div><small>Ref.</small><b>${esc(p.ref||p.numero||pr?.codigo||'—')}</b></div>`:`<div><small>Cliente</small><b>${esc(cl?.nombre||p.client||'—')}</b></div><div><small>Dirección</small><b>${esc(pr?.direccion||p.address||cl?.direccion||'—')}</b></div><div><small>Fecha</small><b>${esc(dateText(p))}</b></div><div><small>Ref. proyecto</small><b>${esc(p.ref||p.numero||pr?.codigo||'—')}</b></div><div><small>Fase</small><b>${esc(phaseNumber(p))}</b></div>`;
     const footer=supplier?'Listado sin precios — Estudio de Jardinería y Paisajismo Sonsoles Pérez Iriarte.':'Estudio de Jardinería y Paisajismo Sonsoles Pérez Iriarte';
     return `<div class="pp-sheet ${supplier?'pp-sheet-supplier':''}"><header class="pp-head">${brandHtml()}<div class="pp-doc-title"><h1>${supplier?'Solicitud de precios a proveedor':esc(pr?.nombre||p.name||p.nombre||'Presupuesto')}</h1><p>${esc(subtitle)}</p></div></header><div class="pp-meta-grid">${meta}</div>${body}${totals}<footer class="pp-footer">${footer}</footer></div>`;
   }
@@ -79,8 +84,7 @@
   }
 
   function updateSummary(p){
-    const s=$('.budget-summary');if(!s)return;
-    s.innerHTML=`<h3 style="font:20px Georgia,serif;margin-top:0">Resumen</h3><div class="info"><small>Base imponible</small><b>${money(base(p))}</b></div><div style="height:8px"></div><div class="info"><small>IVA</small><b>${money(vat(p))}</b></div>${p.irpf_enabled?`<div style="height:8px"></div><div class="info"><small>IRPF</small><b>− ${money(irpf(p))}</b></div>`:''}<div style="font:26px Georgia,serif;margin-top:16px">${money(base(p)+vat(p)-irpf(p))}</div>`;
+    const s=$('.budget-summary');if(s&&window.iriarteBudgetSummary)s.innerHTML=window.iriarteBudgetSummary(p);
   }
 
   function enhanceViews(){
@@ -89,7 +93,10 @@
     if(S.budgetView!=='client'&&S.budgetView!=='supplier'){if(layout)layout.classList.remove('pp-document-mode');return}
     const p=current(),area=$('.budget-content');if(!p||!area||area.dataset.ppDocument===S.budgetView+':'+p.id)return;
     injectStyles();if(layout)layout.classList.add('pp-document-mode');
-    area.dataset.ppDocument=S.budgetView+':'+p.id;area.innerHTML=`<div id="pp-print-actions" class="pp-actions no-print"><button class="btn" data-pp-print>Imprimir</button></div>${buildPrint(p,S.budgetView)}`;area.querySelector('[data-pp-print]').onclick=()=>openPrint(S.budgetView);
+    const supplier=S.budgetView==='supplier';
+    const selector=supplier?`<fieldset class="supplier-sections no-print"><legend>Elige las secciones que vas a enviar al proveedor — sin precios</legend>${sectionOrder(p).map((sec,i)=>`<label><input type="checkbox" data-supplier-section="${i}" ${selectedSections(p).has(sec)?'checked':''}>${esc(sec)}</label>`).join('')}</fieldset>`:'';
+    area.dataset.ppDocument=S.budgetView+':'+p.id;area.innerHTML=`${selector}<div id="pp-print-actions" class="pp-actions no-print"><button class="btn" data-pp-print>Imprimir / Guardar PDF</button></div>${buildPrint(p,S.budgetView)}`;area.querySelector('[data-pp-print]').onclick=()=>openPrint(S.budgetView);
+    area.querySelectorAll('[data-supplier-section]').forEach(input=>input.onchange=()=>{const selected=new Set(selectedSections(p)),sec=sectionOrder(p)[Number(input.dataset.supplierSection)];if(input.checked)selected.add(sec);else selected.delete(sec);supplierSelections.set(String(p.id),selected);area.querySelector('.pp-sheet').outerHTML=buildPrint(p,'supplier')});
   }
 
   function enhance(){clearTimeout(timer);timer=setTimeout(()=>{injectStyles();enhanceEditor();enhanceViews()},50)}
