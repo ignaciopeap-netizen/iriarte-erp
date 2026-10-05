@@ -29,12 +29,14 @@ document.addEventListener('submit',e=>{
  const form=e.target;if(form?.id!=='invoice-pro-form')return;
  const error=document.querySelector('#invoice-pro-error'),dates=dateIssue(form),numeric=numericIssue(form);
  if(dates||numeric){const issue=dates||numeric;e.preventDefault();e.stopImmediatePropagation();if(error)error.innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c"><b>Revisa la factura.</b><br>${issue.msg}</div>`;issue.focus?.focus();return}
- const fd=new FormData(form),state=String(fd.get('estado')||'borrador').toLowerCase();if(['borrador','anulada'].includes(state))return;
- const number=String(fd.get('numero')||'').trim(),client=String(fd.get('cliente_id')||'').trim(),project=String(fd.get('proyecto_id')||'').trim(),lines=[...form.querySelectorAll('[data-invoice-line]')];
+ const fd=new FormData(form),state=String(fd.get('estado')||'borrador').toLowerCase(),client=String(fd.get('cliente_id')||'').trim(),project=String(fd.get('proyecto_id')||'').trim(),lines=[...form.querySelectorAll('[data-invoice-line]')];
  let msg='',focus=null;
+ if(!project){msg='<b>Falta el proyecto.</b><br>Toda factura, también en borrador, debe pertenecer a un proyecto para mantener completa la trazabilidad y la rentabilidad.';focus=form.elements.proyecto_id}
+ else if(!client){msg='<b>Falta el cliente del proyecto.</b><br>Revisa el proyecto seleccionado: la factura debe heredar su cliente.';focus=form.elements.proyecto_id}
+ if(msg){e.preventDefault();e.stopImmediatePropagation();if(error)error.innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c">${msg}</div>`;if(focus?.focus)focus.focus();return}
+ if(['borrador','anulada'].includes(state))return;
+ const number=String(fd.get('numero')||'').trim();
  if(!number){msg='<b>Falta el número de factura.</b><br>Puedes dejarlo vacío mientras sea borrador, pero para emitirla necesita numeración.';focus=form.elements.numero}
- else if(!client){msg='<b>Falta el cliente.</b><br>Selecciona el cliente antes de emitir la factura.';focus=form.elements.cliente_id}
- else if(!project){msg='<b>Falta el proyecto.</b><br>La factura emitida debe quedar vinculada a su proyecto para que la rentabilidad y los informes cuadren.';focus=form.elements.proyecto_id}
  else if(!lines.length){msg='<b>La factura no tiene líneas.</b><br>Añade al menos una línea antes de emitirla.'}
  if(msg){e.preventDefault();e.stopImmediatePropagation();if(error)error.innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c">${msg}</div>`;if(focus?.focus)focus.focus()}
 },true);
