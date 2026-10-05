@@ -23,6 +23,7 @@ jobs:
           test -f MIGRACION_FACTURAS_CONTEXTO_OBLIGATORIO_V2.sql
           test -f MIGRACION_INTEGRIDAD_COMPRAS_PROVEEDOR_V2.sql
           test -f MIGRACION_GASTOS_ESTADO_PAGO_V2.sql
+          test -f MIGRACION_VALIDACION_NUMERICA_PRESUPUESTOS_V2.sql
           grep -q "Antes de facturar, vincula el presupuesto a un proyecto" MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql
           if grep -qi "insert into public.proyectos\|update public.presupuestos" MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql; then
             echo "Invoice creation must not create projects or mutate the source budget" >&2
@@ -48,6 +49,10 @@ jobs:
           grep -q "alter column cliente_id set not null" MIGRACION_FACTURAS_CONTEXTO_OBLIGATORIO_V2.sql
           grep -q "gastos_estado_fecha_pago_coherente_v2" MIGRACION_GASTOS_ESTADO_PAGO_V2.sql
           grep -qi "not valid" MIGRACION_GASTOS_ESTADO_PAGO_V2.sql
+          grep -q "validar_numericos_presupuesto_v2" MIGRACION_VALIDACION_NUMERICA_PRESUPUESTOS_V2.sql
+          grep -q "guard_presupuesto_numericos_v2" MIGRACION_VALIDACION_NUMERICA_PRESUPUESTOS_V2.sql
+          grep -q "el IVA debe estar entre 0%% y 100%%" MIGRACION_VALIDACION_NUMERICA_PRESUPUESTOS_V2.sql
+          grep -q "precio no puede ser negativo" MIGRACION_VALIDACION_NUMERICA_PRESUPUESTOS_V2.sql
           if grep -Eq "from\('proyectos'\)\.(insert|update)" v2/budget-workflow-fix.js; then
             echo "Budget workflow must link existing projects, not create or edit the project master" >&2
             exit 1
@@ -75,4 +80,4 @@ jobs:
           grep -q "La fecha de pago es anterior a la fecha del gasto" v2/data-quality.js
           grep -q "Importe total 0" v2/data-quality.js
           grep -q "Sin concepto ni número de factura" v2/data-quality.js
-          echo "Project-first, supplier and expense integrity guards passed"
+          echo "Project-first, supplier, budget numeric and expense integrity guards passed"
