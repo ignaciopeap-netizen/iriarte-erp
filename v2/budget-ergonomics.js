@@ -29,7 +29,8 @@ function addLineAfter(index){const p=current();if(!p)return;p.items=p.items||[];
 function ensureStatusFilters(sidebar){
  const legacy=[...sidebar.querySelectorAll('.budget-tabs')].find(x=>x.querySelector('[data-budget-filter]')||x.querySelector('[data-budget-status-filter]'));if(!legacy)return;
  if(window.APP)window.APP.budgetFilter='todos';
- legacy.innerHTML=[['todos','Todos'],['borrador','Borrador'],['enviado','Enviado'],['aceptado','Aceptado'],['rechazado','Rechazado'],['sin-proyecto','Sin proyecto']].map(([k,l])=>`<button class="${statusFilter===k?'active':''}" data-budget-status-filter="${k}">${l}</button>`).join('');
+ const html=[['todos','Todos'],['borrador','Borrador'],['enviado','Enviado'],['aceptado','Aceptado'],['rechazado','Rechazado'],['sin-proyecto','Sin proyecto']].map(([k,l])=>`<button class="${statusFilter===k?'active':''}" data-budget-status-filter="${k}">${l}</button>`).join('');
+ if(legacy.innerHTML!==html)legacy.innerHTML=html;
 }
 function syncPhase(p){const x=$('[data-budget-field="phase"]');if(!x||x.dataset.statusSync==='1')return;x.dataset.statusSync='1';const apply=()=>{p.phase=x.value;p.status=x.value;p.estado=canonicalState({phase:x.value});decorateNow()};x.addEventListener('input',apply);x.addEventListener('change',apply)}
 function setEmptyState(empty){
@@ -49,7 +50,7 @@ function decorate(){
 function decorateNow(){
  const A=window.APP;if(A?.route!=='presupuestos')return;
  $$('[data-budget-status-filter]').forEach(b=>b.classList.toggle('active',b.dataset.budgetStatusFilter===statusFilter));
- $$('[data-budget-item]').forEach(item=>{const p=(A.data.presupuestos||[]).find(x=>String(x.id)===String(item.dataset.budgetItem));if(!p)return;item.hidden=!matchesFilter(p);const sm=item.querySelector('small');if(sm)sm.innerHTML=`${esc(p.client||'')} · ${esc(stateLabel(p))}${!p.proyecto_id?' · SIN PROYECTO':''}${p.archived?' · ARCHIVADO':''}`});
+ $$('[data-budget-item]').forEach(item=>{const p=(A.data.presupuestos||[]).find(x=>String(x.id)===String(item.dataset.budgetItem));if(!p)return;item.hidden=!matchesFilter(p);const sm=item.querySelector('small');if(sm){const text=`${esc(p.client||'')} · ${esc(stateLabel(p))}${!p.proyecto_id?' · SIN PROYECTO':''}${p.archived?' · ARCHIVADO':''}`;if(sm.innerHTML!==text)sm.innerHTML=text}});
  const next=nextVisible(),selected=current(),selectedMatches=!!selected&&matchesFilter(selected);setEmptyState(!next);
  if(next&&!selectedMatches){A.sel.budget=next.id;refreshSelected(next.id);return}
  $$('[data-line]').forEach(row=>{if(row.querySelector('[data-budget-dup-line]'))return;const i=Number(row.dataset.line),remove=row.querySelector('[data-remove-line]');if(!remove)return;row.style.gridTemplateColumns='80px 110px minmax(220px,1fr) 120px 60px 70px 90px 65px 38px 38px';const b=document.createElement('button');b.type='button';b.className='btn';b.textContent='⧉';b.title='Duplicar línea';b.dataset.budgetDupLine=String(i);remove.before(b);row.querySelectorAll('input').forEach(input=>input.addEventListener('keydown',e=>{if(e.key==='Enter'&&!e.shiftKey&&!e.ctrlKey&&!e.altKey){e.preventDefault();input.dispatchEvent(new Event('input',{bubbles:true}));addLineAfter(Number(row.dataset.line))}}))});
