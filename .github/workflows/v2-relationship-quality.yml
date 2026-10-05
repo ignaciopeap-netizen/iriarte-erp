@@ -15,7 +15,9 @@ jobs:
         with:
           node-version: '22'
       - name: Syntax
-        run: node --check v2/relationship-quality.js
+        run: |
+          node --check v2/relationship-quality.js
+          node --check v2/project-actions.js
       - name: Guard explicit safe resolution
         run: |
           set -e
@@ -26,13 +28,30 @@ jobs:
           grep -q "Archivar borrador" v2/relationship-quality.js
           grep -q "confirm('Archivar este borrador" v2/relationship-quality.js
           grep -q "No se corrigen automáticamente" v2/relationship-quality.js
+      - name: Guard context-locked project creation
+        run: |
+          set -e
+          grep -q "window.iriarteOpenProjectEditor" v2/project-actions.js
+          grep -q "defaults.client_locked" v2/project-actions.js
+          grep -q "Cliente fijado por contexto" v2/project-actions.js
+          grep -q "data-rq-create-project" v2/relationship-quality.js
+          grep -q "Crear proyecto para este cliente" v2/relationship-quality.js
+          grep -q "cliente_id:budget.cliente_id" v2/relationship-quality.js
+          grep -q "client_locked:true" v2/relationship-quality.js
+          if grep -q "proyecto_id:projectId" v2/relationship-quality.js; then
+            echo "Creating a compatible project must not auto-link it to the budget" >&2
+            exit 1
+          fi
       - name: Guard module load
         run: |
           set -e
+          grep -q '<script src="./project-actions.js"></script>' v2/index.html
           grep -q '<script src="./relationship-quality.js"></script>' v2/index.html
           python - <<'PY'
           from pathlib import Path
           html=Path('v2/index.html').read_text(encoding='utf-8')
+          if html.index('./project-actions.js') > html.index('./relationship-quality.js'):
+              raise SystemExit('project-actions.js must load before relationship-quality.js')
           if html.index('./data-quality.js') > html.index('./relationship-quality.js'):
               raise SystemExit('relationship-quality.js must load after data-quality.js')
           print('Relationship quality load order is correct')
