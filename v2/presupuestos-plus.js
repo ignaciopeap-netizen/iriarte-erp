@@ -68,8 +68,8 @@
       controls.querySelector('#pp-clauses').oninput=e=>p.clausulas=e.target.value.split(/\n+/).filter(Boolean).map(texto=>({texto}));
       controls.querySelector('#pp-direction').oninput=e=>p.direccion_resumen=e.target.value;
     }else{
-      controls.innerHTML=`<h3>Opciones del presupuesto</h3><div class="form-grid"><label>Aplicar IRPF<select id="pp-irpf-enabled"><option value="false" ${p.irpf_enabled?'':'selected'}>No</option><option value="true" ${p.irpf_enabled?'selected':''}>Sí</option></select></label><label>IRPF %<input id="pp-irpf-pct" type="number" step="0.01" value="${num(p.irpf_pct||15)}"></label></div><p style="margin:10px 0 0;color:var(--muted);font-size:11px">Vista cliente y Vista proveedor contienen las salidas imprimibles y descargables; Trabajo se mantiene como editor interno.</p>`;
-      controls.querySelector('#pp-irpf-enabled').onchange=e=>{p.irpf_enabled=e.target.value==='true';updateSummary(p)};
+      controls.innerHTML=`<div class="budget-tax-options"><label><input id="pp-irpf-enabled" type="checkbox" ${p.irpf_enabled?'checked':''}> Aplicar retención IRPF</label><label>IRPF % <input id="pp-irpf-pct" type="number" min="0" max="100" step="0.01" value="${num(p.irpf_pct||15)}"></label></div>`;
+      controls.querySelector('#pp-irpf-enabled').onchange=e=>{p.irpf_enabled=e.target.checked;updateSummary(p)};
       controls.querySelector('#pp-irpf-pct').oninput=e=>{p.irpf_pct=num(e.target.value);updateSummary(p)};
     }
     main.appendChild(controls);addSectionSummary(p);
