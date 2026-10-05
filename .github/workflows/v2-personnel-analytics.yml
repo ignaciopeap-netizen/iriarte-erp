@@ -21,6 +21,7 @@ jobs:
           node --check v2/hours-self-service.js
           node --check v2/analytic-costs.js
           node --check v2/analytics-integrity.js
+          node --check v2/monthly-review.js
           node --check v2/bank-classification-memory.js
           node --check v2/records-v4.js
           node --check v2/finance-view-fix.js
@@ -85,6 +86,14 @@ jobs:
           grep -q "Integridad analítica" v2/analytics-integrity.js
           grep -q "data-ai-refresh" v2/analytics-integrity.js
           grep -q "data-ai-signature" v2/analytics-integrity.js
+      - name: Guard monthly review
+        run: |
+          set -e
+          grep -q "Revisión mensual" v2/monthly-review.js
+          grep -q "Pendientes de revisar" v2/monthly-review.js
+          grep -q "Costes de personal abiertos" v2/monthly-review.js
+          grep -Fq "Banco N · no estudio" v2/monthly-review.js
+          grep -q "Mes listo para revisión final" v2/monthly-review.js
       - name: Guard module loading order
         run: |
           python - <<'PY'
@@ -93,12 +102,12 @@ jobs:
           html=Path('v2/index.html').read_text(encoding='utf-8')
           scripts=re.findall(r'<script src="\./([^"]+)"></script>',html)
           pos={name:i for i,name in enumerate(scripts)}
-          required=['operations-edit.js','hours-self-service.js','finance-view-fix.js','bank-classification-memory.js','reports-plus.js','personnel-costs-v2.js','analytic-costs.js','analytics-integrity.js','records.js','records-v4.js']
+          required=['operations-edit.js','hours-self-service.js','finance-view-fix.js','bank-classification-memory.js','reports-plus.js','personnel-costs-v2.js','analytic-costs.js','analytics-integrity.js','monthly-review.js','records.js','records-v4.js']
           missing=[x for x in required if x not in pos]
           if missing: raise SystemExit('Missing analytical modules: '+', '.join(missing))
           if not pos['operations-edit.js'] < pos['hours-self-service.js']:
               raise SystemExit('Quick hours must load after operational editing')
-          if not pos['finance-view-fix.js'] < pos['bank-classification-memory.js'] < pos['reports-plus.js'] < pos['personnel-costs-v2.js'] < pos['analytic-costs.js'] < pos['analytics-integrity.js']:
+          if not pos['finance-view-fix.js'] < pos['bank-classification-memory.js'] < pos['reports-plus.js'] < pos['personnel-costs-v2.js'] < pos['analytic-costs.js'] < pos['analytics-integrity.js'] < pos['monthly-review.js']:
               raise SystemExit('Finance/personnel analytical module order is invalid')
           if not pos['records.js'] < pos['records-v4.js']:
               raise SystemExit('Records compatibility layer must load before V4')
