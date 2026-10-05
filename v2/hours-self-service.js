@@ -1,0 +1,25 @@
+// Iriarte ERP V2 · parte rápido de horas por persona/proyecto
+(function(){
+'use strict';
+const db=()=>window.__iriarteDb;
+const $=s=>document.querySelector(s);
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[m]));
+const num=v=>Number(String(v??0).replace(',','.'))||0;
+const today=()=>new Date().toISOString().slice(0,10);
+function D(){return window.APP?.data||{}}
+function ownName(){const S=window.APP;return String(S?.profile?.name||S?.profile?.nombre||S?.user?.user_metadata?.name||S?.user?.email?.split('@')[0]||'').trim()}
+function people(){return [...new Set([ownName(),...(D().horas||[]).map(x=>String(x.persona||'').trim())].filter(Boolean))].sort((a,b)=>a.localeCompare(b,'es'))}
+function lastRate(person){const rows=(D().horas||[]).filter(x=>String(x.persona||'').trim().toLowerCase()===String(person||'').trim().toLowerCase()).sort((a,b)=>String(b.fecha||'').localeCompare(String(a.fecha||'')));return num(rows[0]?.coste_hora)}
+function projects(){return (D().proyectos||[]).filter(x=>!['finalizado','cancelado','archivado'].includes(String(x.estado||'').toLowerCase()))}
+function open(){
+ const S=window.APP,root=$('#modal-root'),name=ownName()||people()[0]||'',rate=lastRate(name),selected=S?.sel?.project&&projects().some(x=>String(x.id)===String(S.sel.project))?S.sel.project:projects()[0]?.id||'';
+ root.innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><div><h2>Registrar horas</h2><small style="color:var(--muted)">Parte rápido · después podrás revisarlo por mes</small></div><div class="grow"></div><button class="btn" type="button" data-hs-close>Cerrar</button></div><form id="hs-form"><div class="modal-body"><div class="form-grid"><label>Fecha<input name="fecha" type="date" value="${today()}" required></label><label>Persona<input name="persona" list="hs-people" value="${esc(name)}" required><datalist id="hs-people">${people().map(x=>`<option value="${esc(x)}">`).join('')}</datalist></label><label class="full">Proyecto<select name="proyecto_id" required>${projects().map(p=>`<option value="${esc(p.id)}" ${String(p.id)===String(selected)?'selected':''}>${esc(p.codigo||'')} · ${esc(p.nombre)}</option>`).join('')}</select></label><label>Horas<input name="horas" type="number" min="0.01" step="0.25" value="1" required></label><label>Coste / hora<input name="coste_hora" type="number" min="0" step="0.01" value="${rate}" required></label><label class="full">Concepto<input name="concepto" placeholder="Ej. visita, diseño, dirección de obra…"></label><label class="full">Notas<textarea name="notas"></textarea></label></div><div class="notice"><b>Automático:</b> el coste/hora se propone a partir del último registro de esta persona. Estas horas alimentarán el coste directo del proyecto y el reparto mensual de Seguridad Social/autónomos.</div><div id="hs-error"></div></div><div class="modal-foot"><button class="btn" type="button" data-hs-close>Cancelar</button><button class="btn" type="button" data-hs-save-another>Guardar y añadir otra</button><button class="btn primary" type="submit">Guardar</button></div></form></div></div>`;
+ const close=()=>root.innerHTML='';root.querySelectorAll('[data-hs-close]').forEach(b=>b.onclick=close);const form=$('#hs-form');
+ form.elements.persona.addEventListener('change',()=>{const r=lastRate(form.elements.persona.value);if(r||!num(form.elements.coste_hora.value))form.elements.coste_hora.value=r});
+ async function save(keep){const vals=Object.fromEntries(new FormData(form).entries()),persona=String(vals.persona||'').trim(),own=ownName(),payload={proyecto_id:vals.proyecto_id,usuario_id:own&&persona.toLowerCase()===own.toLowerCase()?S?.user?.id||null:null,persona,fecha:vals.fecha,horas:num(vals.horas),coste_hora:num(vals.coste_hora),concepto:vals.concepto||null,notas:vals.notas||null};if(!payload.proyecto_id)throw new Error('Selecciona un proyecto.');if(!payload.persona)throw new Error('Indica la persona.');if(payload.horas<=0)throw new Error('Las horas deben ser mayores que cero.');const {error}=await db().from('horas_proyecto').insert(payload);if(error)throw error;if(window.reloadIriarte)await window.reloadIriarte();if(keep){form.elements.horas.value='1';form.elements.concepto.value='';form.elements.notas.value='';form.elements.proyecto_id.focus()}else close()}
+ form.onsubmit=async e=>{e.preventDefault();const b=e.submitter;b.disabled=true;try{await save(false)}catch(err){$('#hs-error').innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c">${esc(err.message||err)}</div>`;b.disabled=false}};
+ root.querySelector('[data-hs-save-another]').onclick=async e=>{const b=e.currentTarget;b.disabled=true;try{await save(true);b.disabled=false}catch(err){$('#hs-error').innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c">${esc(err.message||err)}</div>`;b.disabled=false}}
+}
+document.addEventListener('click',e=>{const b=e.target.closest('[data-action="new-hour"]');if(!b)return;e.preventDefault();e.stopImmediatePropagation();open()},true);
+window.iriarteOpenQuickHours=open;
+})();
