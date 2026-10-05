@@ -11,6 +11,7 @@ function lock(select,key,form,value){select.value=value||'';select.disabled=true
 function invoiceEditor(){
  const form=document.querySelector('#invoice-pro-form');if(!form||form.dataset.relReady==='1')return;form.dataset.relReady='1';
  const projectSel=form.elements.proyecto_id,clientSel=form.elements.cliente_id,stateSel=form.elements.estado;if(!projectSel||!clientSel)return;
+ projectSel.required=true;clientSel.required=true;
  const record=invoice(window.__iriarteEditingInvoiceId),state=String(record?.estado||stateSel?.value||'borrador').toLowerCase();
  const contextLocked=!!record&&(!!record.presupuesto_id||state!=='borrador'||(window.APP?.data?.cobros||[]).some(c=>String(c.factura_id)===String(record.id)));
  const note=document.createElement('div');note.className='notice';note.style.marginTop='10px';note.dataset.relNote='invoice';form.querySelector('.form-grid')?.after(note);
@@ -25,7 +26,8 @@ function invoiceEditor(){
      clientSel.value=p.cliente_id||'';lock(clientSel,'invoice-client',form,p.cliente_id||'');
      note.innerHTML=`<b>Cliente heredado del proyecto.</b> ${p.nombre||'El proyecto seleccionado'} determina automáticamente el cliente de la factura.`
    }else{
-     unlock(clientSel,'invoice-client',form);note.innerHTML='<b>Factura sin proyecto.</b> Puedes elegir cliente manualmente; al seleccionar un proyecto, su cliente se aplicará automáticamente.'
+     unlock(clientSel,'invoice-client',form);clientSel.value='';clientSel.disabled=true;hidden(form,'cliente_id','', 'invoice-client');
+     note.innerHTML='<b>Selecciona un proyecto.</b> Toda factura, también en borrador, debe pertenecer a un proyecto. El cliente se heredará automáticamente.'
    }
  }
  projectSel.addEventListener('change',sync);sync()
