@@ -43,7 +43,7 @@ jobs:
           grep -q "Un coste de personal debe proceder de una salida bancaria" MIGRACION_COSTE_PERSONAL_DESDE_BANCO_V2.sql
           grep -q "coste_personal_eliminado" MIGRACION_DESCONCILIAR_COSTE_PERSONAL_BANCO_V2.sql
           grep -q "count(distinct h.usuario_id)=1" MIGRACION_INFERIR_USUARIO_COSTE_PERSONAL_V2.sql
-          grep -q "usuario_id,v_usuario_id" MIGRACION_INFERIR_USUARIO_COSTE_PERSONAL_V2.sql
+          grep -q "values(v_periodo,trim(p_persona),v_usuario_id" MIGRACION_INFERIR_USUARIO_COSTE_PERSONAL_V2.sql
           grep -q "no_estudio" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
           grep -q "security_invoker=true" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
           grep -q "data-pc-month" v2/personnel-costs-v2.js
