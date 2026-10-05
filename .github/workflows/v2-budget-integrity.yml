@@ -17,6 +17,7 @@ jobs:
           test -f MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql
           test -f MIGRACION_CONTROL_INTEGRIDAD_PRESUPUESTOS_V2.sql
           test -f MIGRACION_VALIDACION_PROYECTO_V2.sql
+          test -f MIGRACION_NUEVO_PRESUPUESTO_REQUIERE_PROYECTO_V2.sql
           grep -q "Antes de facturar, vincula el presupuesto a un proyecto" MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql
           if grep -qi "insert into public.proyectos\|update public.presupuestos" MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql; then
             echo "Invoice creation must not create projects or mutate the source budget" >&2
@@ -30,10 +31,15 @@ jobs:
           grep -q "horas_coste_cero" MIGRACION_CONTROL_INTEGRIDAD_PRESUPUESTOS_V2.sql
           grep -q "Todo proyecto debe estar vinculado a un cliente" MIGRACION_VALIDACION_PROYECTO_V2.sql
           grep -q "Todo proyecto debe tener un código" MIGRACION_VALIDACION_PROYECTO_V2.sql
+          grep -q "Todo presupuesto nuevo debe pertenecer a un proyecto" MIGRACION_NUEVO_PRESUPUESTO_REQUIERE_PROYECTO_V2.sql
+          grep -q "before insert on public.presupuestos" MIGRACION_NUEVO_PRESUPUESTO_REQUIERE_PROYECTO_V2.sql
+          grep -q "El cliente del presupuesto debe coincidir con el cliente del proyecto" MIGRACION_NUEVO_PRESUPUESTO_REQUIERE_PROYECTO_V2.sql
           if grep -Eq "from\('proyectos'\)\.(insert|update)" v2/budget-workflow-fix.js; then
             echo "Budget workflow must link existing projects, not create or edit the project master" >&2
             exit 1
           fi
+          grep -q "Primero crea un proyecto con cliente y código" v2/budget-workflow-fix.js
+          grep -q "proyecto_id:p.id" v2/budget-workflow-fix.js
           grep -q "Vincular a proyecto existente" v2/budget-workflow-fix.js
           grep -q "mismo cliente" v2/budget-workflow-fix.js
           grep -q "Pendientes estructurales" v2/ux-finish.js
