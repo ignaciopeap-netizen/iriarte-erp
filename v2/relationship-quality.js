@@ -2,19 +2,21 @@
 (function(){
 'use strict';
 const db=()=>window.__iriarteDb;
-const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
+const esc=v=>String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot',"'":'&#039;'}[m]));
 let timer;
 function D(){return window.APP?.data||{}}
 function byId(arr,id){return (arr||[]).find(x=>String(x.id)===String(id))||null}
 function activeClient(x){return x&&x.activo!==false&&String(x.estado||'').toLowerCase()!=='inactivo'}
+function activeSupplier(x){return x&&x.activo!==false&&String(x.estado||'').toLowerCase()!=='inactivo'}
 function activeProject(x){return x&&x.cliente_id&&!['archivado','cancelado'].includes(String(x.estado||'').toLowerCase())}
 function issues(){
  const d=D(),out=[];
  (d.proyectos||[]).filter(x=>!x.cliente_id).forEach(x=>out.push({type:'project',id:x.id,title:x.nombre||x.codigo||'Proyecto',problem:'Proyecto sin cliente',detail:'Asigna el cliente correcto para que presupuestos, facturas y rentabilidad hereden el contexto comercial.'}));
  (d.presupuestos||[]).filter(x=>!x.proyecto_id&&!x.archived).forEach(x=>out.push({type:'budget',id:x.id,title:x.name||x.nombre||x.numero||'Presupuesto',problem:'Presupuesto sin proyecto',detail:'Vincúlalo a un proyecto compatible o archívalo si es un borrador de prueba que ya no debe formar parte del circuito operativo.'}));
+ (d.compras||[]).filter(x=>!x.proveedor_id).forEach(x=>out.push({type:'purchase',id:x.id,title:x.numero_factura||x.concepto||'Compra sin proveedor',problem:'Compra sin proveedor',detail:'Asigna el proveedor correcto. Si es un registro vacío de prueba, ábrelo para revisarlo y eliminarlo explícitamente si procede.'}));
  return out
 }
-function openIssue(x){if(window.iriarteOpenRecord)return window.iriarteOpenRecord(x.type,x.id);if(x.type==='project'){window.APP.sel.project=x.id;return window.iriarteRoute?.('proyectos')}if(x.type==='budget'){window.APP.sel.budget=x.id;return window.iriarteRoute?.('presupuestos')}}
+function openIssue(x){if(window.iriarteOpenRecord)return window.iriarteOpenRecord(x.type,x.id);if(x.type==='project'){window.APP.sel.project=x.id;return window.iriarteRoute?.('proyectos')}if(x.type==='budget'){window.APP.sel.budget=x.id;return window.iriarteRoute?.('presupuestos')}if(x.type==='purchase'){localStorage.setItem('iriarte_open_purchase',x.id);return window.iriarteRoute?.('compras')}}
 function closeModal(){const root=document.querySelector('#modal-root');if(root)root.innerHTML=''}
 function linkedClientIds(projectId){
  const d=D(),ids=[];
@@ -23,6 +25,7 @@ function linkedClientIds(projectId){
  return [...new Set(ids)]
 }
 function clientOptions(list,selected){return '<option value="">Selecciona cliente…</option>'+list.map(x=>`<option value="${esc(x.id)}" ${String(x.id)===String(selected||'')?'selected':''}>${esc(x.nombre||x.name||'Cliente')}</option>`).join('')}
+function supplierOptions(list,selected){return '<option value="">Selecciona proveedor…</option>'+list.map(x=>`<option value="${esc(x.id)}" ${String(x.id)===String(selected||'')?'selected':''}>${esc(x.nombre||x.name||'Proveedor')}</option>`).join('')}
 function projectOptions(list,selected){return '<option value="">Selecciona proyecto…</option>'+list.map(x=>`<option value="${esc(x.id)}" ${String(x.id)===String(selected||'')?'selected':''}>${esc((x.codigo?x.codigo+' · ':'')+(x.nombre||'Proyecto'))}</option>`).join('')}
 async function reload(){if(window.reloadIriarte)await window.reloadIriarte();else location.reload()}
 function resolveProject(issue){
@@ -41,10 +44,16 @@ function resolveBudget(issue){
  const createProject=root.querySelector('[data-rq-create-project]');if(createProject)createProject.onclick=()=>{closeModal();window.iriarteOpenProjectEditor(null,{cliente_id:budget.cliente_id,client_locked:true,nombre:budget.name||budget.nombre||''})};
  const archive=root.querySelector('[data-rq-archive]');if(archive)archive.onclick=async()=>{if(!confirm('Archivar este borrador? Dejará de aparecer como pendiente, pero no se borrará.'))return;archive.disabled=true;try{const {error}=await db().from('presupuestos').update({archived:true}).eq('id',budget.id);if(error)throw error;closeModal();await reload()}catch(err){root.querySelector('[data-rq-error]').innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c">${esc(err.message||err)}</div>`;archive.disabled=false}}
 }
-function resolveIssue(x){if(x.type==='project')resolveProject(x);else if(x.type==='budget')resolveBudget(x)}
+function resolvePurchase(issue){
+ const d=D(),purchase=byId(d.compras,issue.id);if(!purchase)return;const suppliers=(d.proveedores||[]).filter(activeSupplier),root=document.querySelector('#modal-root');if(!root)return;
+ root.innerHTML=`<div class="modal-backdrop"><div class="modal"><div class="modal-head"><h2>Resolver proveedor de la compra</h2><div class="grow"></div><button class="btn" type="button" data-rq-close>Cerrar</button></div><form data-rq-purchase-form><div class="modal-body"><div class="notice"><b>${esc(purchase.numero_factura||purchase.concepto||'Compra sin proveedor')}</b><br>Asigna únicamente el proveedor correcto. Proyecto, importes, estado y demás datos de la compra no se modificarán.</div><label>Proveedor<select name="proveedor_id" required>${supplierOptions(suppliers,purchase.proveedor_id)}</select></label><div data-rq-error></div></div><div class="modal-foot"><button class="btn" type="button" data-rq-close>Cancelar</button><button class="btn primary" type="submit">Asignar proveedor</button></div></form></div></div>`;
+ root.querySelectorAll('[data-rq-close]').forEach(b=>b.onclick=closeModal);const form=root.querySelector('[data-rq-purchase-form]');if(!form)return;
+ form.onsubmit=async e=>{e.preventDefault();const submit=e.submitter;submit.disabled=true;try{const supplierId=new FormData(form).get('proveedor_id');if(!supplierId||!byId(suppliers,supplierId))throw new Error('Selecciona un proveedor válido.');const {error}=await db().from('compras').update({proveedor_id:supplierId}).eq('id',purchase.id);if(error)throw error;closeModal();await reload()}catch(err){root.querySelector('[data-rq-error]').innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c">${esc(err.message||err)}</div>`;submit.disabled=false}}
+}
+function resolveIssue(x){if(x.type==='project')resolveProject(x);else if(x.type==='budget')resolveBudget(x);else if(x.type==='purchase')resolvePurchase(x)}
 function render(){
  if(window.APP?.route!=='informes')return;const root=document.querySelector('#reports-v2');if(!root)return;const old=root.querySelector('[data-relationship-quality]'),list=issues();if(!list.length){old?.remove();return}const signature=list.map(x=>x.type+':'+x.id).join('|');if(old?.dataset.rqSignature===signature)return;
- const panel=document.createElement('section');panel.className='card panel';panel.dataset.relationshipQuality='1';panel.dataset.rqSignature=signature;panel.style.marginTop='14px';panel.innerHTML=`<div class="page-head" style="margin-bottom:10px"><div><h3 style="margin:0">Relaciones pendientes</h3><small style="color:var(--muted)">Registros válidos que aún no están conectados al eje Cliente → Proyecto → Presupuesto.</small></div></div><div class="notice" style="background:#fff2d8;color:#745b24"><b>${list.length} relación${list.length===1?'':'es'} pendiente${list.length===1?'':'s'}.</b> No se corrigen automáticamente: cada cambio requiere elegir explícitamente el cliente o proyecto correcto.</div><div class="table-wrap"><table class="table"><tr><th>Registro</th><th>Problema</th><th>Qué revisar</th><th></th></tr>${list.map((x,i)=>`<tr><td><b>${esc(x.title)}</b></td><td>${esc(x.problem)}</td><td>${esc(x.detail)}</td><td style="white-space:nowrap"><button class="btn primary" type="button" data-rq-resolve="${i}">Resolver</button> <button class="btn" type="button" data-rq-open="${i}">Abrir</button></td></tr>`).join('')}</table></div>`;
+ const panel=document.createElement('section');panel.className='card panel';panel.dataset.relationshipQuality='1';panel.dataset.rqSignature=signature;panel.style.marginTop='14px';panel.innerHTML=`<div class="page-head" style="margin-bottom:10px"><div><h3 style="margin:0">Relaciones pendientes</h3><small style="color:var(--muted)">Registros existentes a los que aún les falta una relación maestra necesaria para el circuito operativo.</small></div></div><div class="notice" style="background:#fff2d8;color:#745b24"><b>${list.length} relación${list.length===1?'':'es'} pendiente${list.length===1?'':'s'}.</b> No se corrigen automáticamente: cada cambio requiere elegir explícitamente el cliente, proyecto o proveedor correcto.</div><div class="table-wrap"><table class="table"><tr><th>Registro</th><th>Problema</th><th>Qué revisar</th><th></th></tr>${list.map((x,i)=>`<tr><td><b>${esc(x.title)}</b></td><td>${esc(x.problem)}</td><td>${esc(x.detail)}</td><td style="white-space:nowrap"><button class="btn primary" type="button" data-rq-resolve="${i}">Resolver</button> <button class="btn" type="button" data-rq-open="${i}">Abrir</button></td></tr>`).join('')}</table></div>`;
  if(old)old.replaceWith(panel);else{const before=root.querySelector('[data-monthly-review]')||root.querySelector('[data-analytics-integrity]');if(before)before.insertAdjacentElement('beforebegin',panel);else root.appendChild(panel)}panel.querySelectorAll('[data-rq-open]').forEach(b=>b.onclick=()=>openIssue(list[Number(b.dataset.rqOpen)]));panel.querySelectorAll('[data-rq-resolve]').forEach(b=>b.onclick=()=>resolveIssue(list[Number(b.dataset.rqResolve)]))
 }
 function schedule(){clearTimeout(timer);timer=setTimeout(render,120)}
