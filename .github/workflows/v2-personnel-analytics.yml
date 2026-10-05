@@ -27,12 +27,17 @@ jobs:
           set -e
           test -f MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
           test -f MIGRACION_GUARDAR_IMPUTACIONES_COSTE_PERSONAL_V2.sql
+          test -f MIGRACION_COSTE_PERSONAL_DESDE_BANCO_V2.sql
+          test -f MIGRACION_DESCONCILIAR_COSTE_PERSONAL_BANCO_V2.sql
           grep -q "costes_personal_mensuales" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
           grep -q "costes_personal_imputaciones" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
           grep -q "recalcular_imputaciones_coste_personal_v2" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
           grep -q "cerrar_coste_personal_v2" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
           grep -q "guardar_imputaciones_coste_personal_v2" MIGRACION_GUARDAR_IMPUTACIONES_COSTE_PERSONAL_V2.sql
           grep -q "v_control_integridad_costes_personal_v2" MIGRACION_GUARDAR_IMPUTACIONES_COSTE_PERSONAL_V2.sql
+          grep -q "crear_coste_personal_desde_movimiento_v2" MIGRACION_COSTE_PERSONAL_DESDE_BANCO_V2.sql
+          grep -q "Un coste de personal debe proceder de una salida bancaria" MIGRACION_COSTE_PERSONAL_DESDE_BANCO_V2.sql
+          grep -q "coste_personal_eliminado" MIGRACION_DESCONCILIAR_COSTE_PERSONAL_BANCO_V2.sql
           grep -q "no_estudio" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
           grep -q "security_invoker=true" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
           grep -q "data-pc-month" v2/personnel-costs-v2.js
@@ -50,6 +55,7 @@ jobs:
           grep -q "v_control_clasificacion_banco_v2" MIGRACION_CLASIFICACION_ANALITICA_BANCO_V2.sql
           grep -q "data-bank-classify" v2/finance-view-fix.js
           grep -Fq "N · No estudio" v2/finance-view-fix.js
+          grep -q "crear_coste_personal_desde_movimiento_v2" v2/finance-view-fix.js
           grep -q "Movimientos directos de banco" v2/analytic-costs.js
           grep -q "Resultado analítico ampliado" v2/analytic-costs.js
       - name: Guard module loading order
