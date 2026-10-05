@@ -30,6 +30,7 @@ jobs:
           test -f MIGRACION_GUARDAR_IMPUTACIONES_COSTE_PERSONAL_V2.sql
           test -f MIGRACION_COSTE_PERSONAL_DESDE_BANCO_V2.sql
           test -f MIGRACION_DESCONCILIAR_COSTE_PERSONAL_BANCO_V2.sql
+          test -f MIGRACION_INFERIR_USUARIO_COSTE_PERSONAL_V2.sql
           grep -q "costes_personal_mensuales" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
           grep -q "costes_personal_imputaciones" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
           grep -q "recalcular_imputaciones_coste_personal_v2" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
@@ -39,10 +40,13 @@ jobs:
           grep -q "crear_coste_personal_desde_movimiento_v2" MIGRACION_COSTE_PERSONAL_DESDE_BANCO_V2.sql
           grep -q "Un coste de personal debe proceder de una salida bancaria" MIGRACION_COSTE_PERSONAL_DESDE_BANCO_V2.sql
           grep -q "coste_personal_eliminado" MIGRACION_DESCONCILIAR_COSTE_PERSONAL_BANCO_V2.sql
+          grep -q "count(distinct h.usuario_id)=1" MIGRACION_INFERIR_USUARIO_COSTE_PERSONAL_V2.sql
+          grep -q "usuario_id,v_usuario_id" MIGRACION_INFERIR_USUARIO_COSTE_PERSONAL_V2.sql
           grep -q "no_estudio" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
           grep -q "security_invoker=true" MIGRACION_COSTES_PERSONAL_IMPUTACIONES_V2.sql
           grep -q "data-pc-month" v2/personnel-costs-v2.js
           grep -q "Guardar y añadir otra" v2/hours-self-service.js
+          grep -q "usuario_id:own" v2/hours-self-service.js
           grep -q "window.iriarteOpenPersonnelCost" v2/personnel-costs-v2.js
           grep -q "Coste personal" v2/records-v4.js
           grep -q "Imputación personal" v2/records-v4.js
@@ -69,6 +73,7 @@ jobs:
           grep -q "v_control_clasificacion_banco_v2" v2/analytics-integrity.js
           grep -q "Integridad analítica" v2/analytics-integrity.js
           grep -q "data-ai-refresh" v2/analytics-integrity.js
+          grep -q "data-ai-signature" v2/analytics-integrity.js
       - name: Guard module loading order
         run: |
           python - <<'PY'
