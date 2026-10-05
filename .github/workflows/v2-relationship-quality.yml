@@ -28,6 +28,14 @@ jobs:
           grep -q "Archivar borrador" v2/relationship-quality.js
           grep -q "confirm('Archivar este borrador" v2/relationship-quality.js
           grep -q "No se corrigen automáticamente" v2/relationship-quality.js
+      - name: Guard purchase supplier resolution
+        run: |
+          set -e
+          grep -q "Compra sin proveedor" v2/relationship-quality.js
+          grep -q "resolvePurchase" v2/relationship-quality.js
+          grep -q "data-rq-purchase-form" v2/relationship-quality.js
+          grep -q "update({proveedor_id:supplierId})" v2/relationship-quality.js
+          grep -q "Asigna únicamente el proveedor correcto" v2/relationship-quality.js
       - name: Guard context-locked project creation
         run: |
           set -e
