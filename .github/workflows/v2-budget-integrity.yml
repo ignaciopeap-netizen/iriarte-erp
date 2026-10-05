@@ -18,6 +18,8 @@ jobs:
           test -f MIGRACION_CONTROL_INTEGRIDAD_PRESUPUESTOS_V2.sql
           test -f MIGRACION_VALIDACION_PROYECTO_V2.sql
           test -f MIGRACION_NUEVO_PRESUPUESTO_REQUIERE_PROYECTO_V2.sql
+          test -f MIGRACION_COMPRAS_PROYECTO_OBLIGATORIO_V2.sql
+          test -f MIGRACION_FACTURAS_CONTEXTO_OBLIGATORIO_V2.sql
           grep -q "Antes de facturar, vincula el presupuesto a un proyecto" MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql
           if grep -qi "insert into public.proyectos\|update public.presupuestos" MIGRACION_PROYECTO_PRIMERO_FACTURACION_V2.sql; then
             echo "Invoice creation must not create projects or mutate the source budget" >&2
@@ -34,6 +36,9 @@ jobs:
           grep -q "Todo presupuesto nuevo debe pertenecer a un proyecto" MIGRACION_NUEVO_PRESUPUESTO_REQUIERE_PROYECTO_V2.sql
           grep -q "before insert on public.presupuestos" MIGRACION_NUEVO_PRESUPUESTO_REQUIERE_PROYECTO_V2.sql
           grep -q "El cliente del presupuesto debe coincidir con el cliente del proyecto" MIGRACION_NUEVO_PRESUPUESTO_REQUIERE_PROYECTO_V2.sql
+          grep -q "alter column proyecto_id set not null" MIGRACION_COMPRAS_PROYECTO_OBLIGATORIO_V2.sql
+          grep -q "alter column proyecto_id set not null" MIGRACION_FACTURAS_CONTEXTO_OBLIGATORIO_V2.sql
+          grep -q "alter column cliente_id set not null" MIGRACION_FACTURAS_CONTEXTO_OBLIGATORIO_V2.sql
           if grep -Eq "from\('proyectos'\)\.(insert|update)" v2/budget-workflow-fix.js; then
             echo "Budget workflow must link existing projects, not create or edit the project master" >&2
             exit 1
@@ -42,6 +47,11 @@ jobs:
           grep -q "proyecto_id:p.id" v2/budget-workflow-fix.js
           grep -q "Vincular a proyecto existente" v2/budget-workflow-fix.js
           grep -q "mismo cliente" v2/budget-workflow-fix.js
+          grep -q 'name="proyecto_id" required' v2/enhancements.js
+          grep -q "Toda compra debe pertenecer a un proyecto" v2/enhancements.js
+          grep -q "Toda compra debe permanecer vinculada a un proyecto" v2/purchases-plus.js
+          grep -q "projectSel.required=true" v2/relational-ui.js
+          grep -q "Toda factura, también en borrador, debe pertenecer a un proyecto" v2/invoice-guard.js
           grep -q "Pendientes estructurales" v2/ux-finish.js
           grep -q "Horas sin coste imputado" v2/ux-finish.js
           test -f v2/expenses-plus.js
