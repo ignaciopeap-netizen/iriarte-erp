@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Iriarte ERP · Abrir revisión</title>
+  <style>
+    body{font-family:Arial,sans-serif;background:#f3efe7;color:#283126;display:grid;place-items:center;min-height:100vh;margin:0}.box{background:white;padding:28px 32px;border-radius:16px;box-shadow:0 12px 30px rgba(0,0,0,.08);max-width:520px}.box h1{font-family:Georgia,serif;margin:0 0 10px}.box p{color:#657060;line-height:1.5}.err{color:#8f4d3c;white-space:pre-wrap}
+  </style>
+</head>
+<body>
+  <div class="box"><h1>Iriarte ERP</h1><p>Abriendo modo revisión sin credenciales…</p><div id="status">Cargando interfaz.</div></div>
+  <script>
+  (async()=>{
+    const TEMPLATE='https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@92c5d0bbb7f526ae4838b8ccc5907fb33800a7e7/v2/review-public.html';
+    const REVIEW_COMMIT='171b2ccfccecfcec7bfcbad29de6942306e0a8a6';
+    const OLD='82aeb66e24dfe9318f09c2354317bcb179188014';
+    const CDN='https://cdn.jsdelivr.net/gh/ignaciopeap-netizen/iriarte-erp@'+REVIEW_COMMIT+'/v2/';
+    try{
+      const res=await fetch(TEMPLATE,{cache:'no-store'});if(!res.ok)throw new Error('No se pudo cargar la plantilla ('+res.status+').');
+      let html=await res.text();
+      html=html.split(OLD).join(REVIEW_COMMIT);
+      const supabaseTag='<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"><\\/script>';
+      const reviewTag='<script src="'+CDN+'review-mode.js"><\\/script>';
+      html=html.replace(supabaseTag,supabaseTag+'\n  '+reviewTag);
+      html=html.replace('Iriarte ERP V2 · Revisión pública','Iriarte ERP V2 · Revisión sin credenciales');
+      document.open();document.write(html);document.close();
+    }catch(err){document.querySelector('#status').className='err';document.querySelector('#status').textContent='No se pudo abrir la revisión.\n'+(err.message||err)}
+  })();
+  <\/script>
+</body>
+</html>
