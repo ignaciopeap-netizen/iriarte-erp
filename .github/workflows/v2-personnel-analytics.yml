@@ -20,7 +20,7 @@ jobs:
           node --check v2/personnel-costs-v2.js
           node --check v2/hours-self-service.js
           node --check v2/analytic-costs.js
-          node --check v2/records-v3.js
+          node --check v2/records-v4.js
           node --check v2/finance-view-fix.js
       - name: Guard personnel allocation engine
         run: |
@@ -43,8 +43,11 @@ jobs:
           grep -q "data-pc-month" v2/personnel-costs-v2.js
           grep -q "Guardar y añadir otra" v2/hours-self-service.js
           grep -q "window.iriarteOpenPersonnelCost" v2/personnel-costs-v2.js
-          grep -q "Coste personal" v2/records-v3.js
-          grep -q "Imputación personal" v2/records-v3.js
+          grep -q "Coste personal" v2/records-v4.js
+          grep -q "Imputación personal" v2/records-v4.js
+          grep -q "Nº proyecto" v2/records-v4.js
+          grep -q "Pendiente" v2/records-v4.js
+          grep -q "Costes de proyecto" v2/records-v4.js
       - name: Guard analytical bank classification
         run: |
           set -e
@@ -66,15 +69,17 @@ jobs:
           html=Path('v2/index.html').read_text(encoding='utf-8')
           scripts=re.findall(r'<script src="\./([^"]+)"></script>',html)
           pos={name:i for i,name in enumerate(scripts)}
-          required=['operations-edit.js','hours-self-service.js','finance-view-fix.js','reports-plus.js','personnel-costs-v2.js','analytic-costs.js','records.js','records-v3.js']
+          required=['operations-edit.js','hours-self-service.js','finance-view-fix.js','reports-plus.js','personnel-costs-v2.js','analytic-costs.js','records.js','records-v4.js']
           missing=[x for x in required if x not in pos]
           if missing: raise SystemExit('Missing analytical modules: '+', '.join(missing))
           if not pos['operations-edit.js'] < pos['hours-self-service.js']:
               raise SystemExit('Quick hours must load after operational editing')
           if not pos['finance-view-fix.js'] < pos['reports-plus.js'] < pos['personnel-costs-v2.js'] < pos['analytic-costs.js']:
               raise SystemExit('Finance/personnel analytical module order is invalid')
-          if not pos['records.js'] < pos['records-v3.js']:
-              raise SystemExit('Records compatibility layer must load before V3')
+          if not pos['records.js'] < pos['records-v4.js']:
+              raise SystemExit('Records compatibility layer must load before V4')
+          if 'records-v3.js' in pos:
+              raise SystemExit('Records V3 must not be loaded together with V4')
           if 'personnel-costs.js' in pos:
               raise SystemExit('Legacy personnel-costs.js must not be loaded together with canonical V2')
           print('Personnel analytics module order is correct')
