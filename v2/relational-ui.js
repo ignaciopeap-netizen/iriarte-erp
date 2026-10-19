@@ -19,15 +19,19 @@ function invoiceEditor(){
    const p=project(projectSel.value);
    if(contextLocked){
      lock(projectSel,'invoice-project',form,record?.proyecto_id||projectSel.value);lock(clientSel,'invoice-client',form,record?.cliente_id||clientSel.value);
-     note.innerHTML=record?.presupuesto_id?'<b>Contexto heredado del presupuesto.</b> Esta factura conserva proyecto y cliente del presupuesto que la originó.':'<b>Contexto financiero bloqueado.</b> Una factura emitida o con cobros no puede cambiar de cliente o proyecto.';return
+     note.innerHTML=record?.presupuesto_id?'<b>Contexto heredado del presupuesto.</b> Esta factura conserva el proyecto y el destinatario elegidos al generarla.':'<b>Contexto financiero bloqueado.</b> Una factura emitida o con cobros no puede cambiar de cliente o proyecto.';return
    }
    unlock(projectSel,'invoice-project',form);
    if(p){
-     clientSel.value=p.cliente_id||'';lock(clientSel,'invoice-client',form,p.cliente_id||'');
-     note.innerHTML=`<b>Cliente heredado del proyecto.</b> ${p.nombre||'El proyecto seleccionado'} determina automáticamente el cliente de la factura.`
+     const clients=window.IriarteBilling?.clients(window.APP.data,p.id)||[];
+     const previous=clientSel.value;unlock(clientSel,'invoice-client',form);
+     clientSel.replaceChildren(...clients.map(x=>{const o=document.createElement('option');o.value=x.cliente_id;o.textContent=x.client.nombre;return o}));
+     clientSel.value=clients.some(x=>String(x.cliente_id)===String(previous))?previous:p.cliente_id||'';
+     if(clients.length===1)lock(clientSel,'invoice-client',form,clientSel.value);
+     note.textContent='Elige el destinatario entre los clientes asociados a este proyecto.';
    }else{
      unlock(clientSel,'invoice-client',form);clientSel.value='';clientSel.disabled=true;hidden(form,'cliente_id','', 'invoice-client');
-     note.innerHTML='<b>Selecciona un proyecto.</b> Toda factura, también en borrador, debe pertenecer a un proyecto. El cliente se heredará automáticamente.'
+     note.innerHTML='<b>Selecciona un proyecto.</b> Toda factura, también en borrador, debe pertenecer a un proyecto. Después podrás elegir uno de sus clientes asociados.'
    }
  }
  projectSel.addEventListener('change',sync);sync()
