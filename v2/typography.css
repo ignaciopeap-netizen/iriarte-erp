@@ -1,0 +1,4 @@
+/* One self-contained typeface in the application, previews and generated documents. */
+:root{--font-ui:Arial,Helvetica,sans-serif}html,body,button,input,select,textarea{font-family:var(--font-ui)!important}h1,h2,h3,h4,h5,h6,.brand strong,.brand-mark,.kpi strong,.modal-head h2,.work-section-heading strong,.pp-brand,.pp-doc-title h1,.pp-section h3,.pp-totals .grand,.h-doc-title,.doc-sheet{font-family:var(--font-ui)!important}.page-head h1{font-weight:600;letter-spacing:-.025em}.table,.pp-table,.billing-quote,.info b{font-variant-numeric:tabular-nums}
+
+body *{font-family:var(--font-ui)!important}
