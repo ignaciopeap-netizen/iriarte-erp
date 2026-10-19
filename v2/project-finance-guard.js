@@ -23,9 +23,9 @@ function activeProjectData(){
 function apply(){
  if(window.APP?.route!=='proyectos')return;const d=activeProjectData();if(!d)return;
  const core=$('.card.detail > .grid.cols-4');
- if(core){core.innerHTML=`${kpi('Facturado base',money(d.baseInv))}${kpi('Compras base',money(d.basePur))}${kpi('Coste horas',money(d.hourCost))}${kpi('Margen directo',money(d.margin),d.margin)}`;core.dataset.financeGuard='1'}
+ if(core&&core.dataset.financeSignature!==JSON.stringify(d)){core.dataset.financeSignature=JSON.stringify(d);core.innerHTML=`${kpi('Facturado base',money(d.baseInv))}${kpi('Compras base',money(d.basePur))}${kpi('Coste horas',money(d.hourCost))}${kpi('Margen directo',money(d.margin),d.margin)}`;core.dataset.financeGuard='1'}
  const hub=$('#project-hub-v2 .grid.cols-6');
- if(hub){hub.innerHTML=`${row('Facturado base',money(d.baseInv))}${row('Compras base',money(d.basePur))}${row('Coste horas',money(d.hourCost))}${row('Margen directo',money(d.margin),d.margin>=0?'positive':'negative')}${row('Pendiente cobro',money(d.pendingCollect),d.pendingCollect>0?'negative':'positive')}${row('Pendiente pago',money(d.pendingPay),d.pendingPay>0?'negative':'positive')}`;hub.dataset.financeGuard='1'}
+ if(hub&&hub.dataset.financeSignature!==JSON.stringify(d)){hub.dataset.financeSignature=JSON.stringify(d);hub.innerHTML=`${row('Facturado base',money(d.baseInv))}${row('Compras base',money(d.basePur))}${row('Coste horas',money(d.hourCost))}${row('Margen directo',money(d.margin),d.margin>=0?'positive':'negative')}${row('Pendiente cobro',money(d.pendingCollect),d.pendingCollect>0?'negative':'positive')}${row('Pendiente pago',money(d.pendingPay),d.pendingPay>0?'negative':'positive')}`;hub.dataset.financeGuard='1'}
 }
 function schedule(){clearTimeout(timer);timer=setTimeout(apply,70)}
 new MutationObserver(schedule).observe(document.body,{childList:true,subtree:true});window.addEventListener('hashchange',schedule);window.addEventListener('load',schedule);
