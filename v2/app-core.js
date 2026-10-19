@@ -31,7 +31,13 @@ function projectName(id){return S.data.proyectos.find(x=>String(x.id)===String(i
 function supplierName(id){return S.data.proveedores.find(x=>String(x.id)===String(id))?.nombre||'—'}
 function filtered(arr,key='proyecto_id'){return S.sel.project?(arr||[]).filter(x=>String(x[key]??x.project_id??'')===String(S.sel.project)):(arr||[])}
 
-async function selectSafe(table,order){try{let q=sb.from(table).select('*');if(order)q=q.order(order,{ascending:false});const {data,error}=await q;if(error)throw error;return data||[]}catch(e){console.warn('Carga',table,e.message);return[]}}
+async function selectSafe(table,order){try{
+  if(table==='clientes'||table==='proveedores'){
+    const rows=[];for(let offset=0;;offset+=1000){const {data,error}=await sb.from(table).select('*').order('id',{ascending:true}).range(offset,offset+999);if(error)throw error;rows.push(...(data||[]));if(!data||data.length<1000)break;}
+    return order?rows.sort((a,b)=>String(b[order]||'').localeCompare(String(a[order]||''))):rows;
+  }
+  let q=sb.from(table).select('*');if(order)q=q.order(order,{ascending:false});const {data,error}=await q;if(error)throw error;return data||[];
+}catch(e){console.warn('Carga',table,e.message);return[]}}
 async function loadAll(){
   const [clientes,proyectos,presupuestos,facturas,lineas,proveedores,compras,cobros,pagos,horas,visitas,tareas,incidencias,docs,gastos,movs,proyectoClientes,fases]=await Promise.all([
     selectSafe('clientes','updated_at'),selectSafe('v_proyectos_operativos','updated_at'),selectSafe('presupuestos','updated_at'),selectSafe('facturas','fecha'),selectSafe('factura_lineas','orden'),selectSafe('proveedores','updated_at'),selectSafe('compras','fecha'),selectSafe('cobros','fecha'),selectSafe('pagos','fecha'),selectSafe('horas_proyecto','fecha'),selectSafe('obra_visitas','fecha'),selectSafe('obra_tareas','created_at'),selectSafe('obra_incidencias','created_at'),selectSafe('documentos','created_at'),selectSafe('gastos_generales','fecha'),selectSafe('movimientos_financieros','fecha'),selectSafe('proyecto_clientes'),selectSafe('presupuesto_fases_facturacion','orden')
