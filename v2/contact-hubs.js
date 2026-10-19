@@ -11,7 +11,7 @@ const clickStyle='width:100%;text-align:left;border:0;background:transparent;col
 function closeHub(){const root=$('#modal-root');if(root)root.innerHTML=''}
 function closeable(title,html){const root=$('#modal-root');root.innerHTML=`<div class="modal-backdrop"><div class="modal" style="width:min(980px,96vw)"><div class="modal-head"><h2>${esc(title)}</h2><div class="grow"></div><button class="btn" type="button" data-ch-close>Cerrar</button></div><div class="modal-body">${html}</div></div></div>`;root.querySelectorAll('[data-ch-close]').forEach(b=>b.onclick=closeHub)}
 function badge(s){const v=String(s||'—');const cls=/cobrad|pagad|acept|activo/i.test(v)?'good':/anulad|cancel|inactiv/i.test(v)?'bad':'warn';return `<span class="badge ${cls}">${esc(v.replaceAll('_',' '))}</span>`}
-function projectsForClient(id,D){return (D.proyectos||[]).filter(x=>String(x.cliente_id)===String(id))}
+function projectsForClient(id,D){return (D.proyectos||[]).filter(x=>window.IriarteBilling?.clients(D,x.id).some(c=>String(c.cliente_id)===String(id))||String(x.cliente_id)===String(id))}
 function docLabel(d){const date=(d.fecha_documento||d.created_at||'').slice(0,10);return `${esc(d.tipo||'Documento')}${date?' · '+esc(date):''}`}
 function openRecord(type,id){
  if(!id)return;closeHub();
