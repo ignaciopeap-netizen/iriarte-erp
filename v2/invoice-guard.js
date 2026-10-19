@@ -32,7 +32,7 @@ document.addEventListener('submit',e=>{
  const fd=new FormData(form),state=String(fd.get('estado')||'borrador').toLowerCase(),client=String(fd.get('cliente_id')||'').trim(),project=String(fd.get('proyecto_id')||'').trim(),lines=[...form.querySelectorAll('[data-invoice-line]')];
  let msg='',focus=null;
  if(!project){msg='<b>Falta el proyecto.</b><br>Toda factura, también en borrador, debe pertenecer a un proyecto para mantener completa la trazabilidad y la rentabilidad.';focus=form.elements.proyecto_id}
- else if(!client){msg='<b>Falta el cliente del proyecto.</b><br>Revisa el proyecto seleccionado: la factura debe heredar su cliente.';focus=form.elements.proyecto_id}
+ else if(!client){msg='<b>Falta el cliente del proyecto.</b><br>Elige uno de los clientes asociados al proyecto.';focus=form.elements.proyecto_id}
  if(msg){e.preventDefault();e.stopImmediatePropagation();if(error)error.innerHTML=`<div class="notice" style="background:#f6dfd7;color:#8f4d3c">${msg}</div>`;if(focus?.focus)focus.focus();return}
  if(['borrador','anulada'].includes(state))return;
  const number=String(fd.get('numero')||'').trim();
